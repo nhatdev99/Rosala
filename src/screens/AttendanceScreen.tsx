@@ -58,6 +58,9 @@ export default function AttendanceScreen() {
   const checkIn = useSalaryStore(
     (s) => s.checkIn
   );
+  const config = useSalaryStore(
+    (s) => s.config
+  );
   const checkOut = useSalaryStore(
     (s) => s.checkOut
   );
@@ -79,9 +82,11 @@ export default function AttendanceScreen() {
     () =>
       attendance.find(
         (r) =>
-          r.checkInTime && !r.checkOutTime
+          r.date === todayStr &&
+          r.checkInTime &&
+          !r.checkOutTime
       ),
-    [attendance]
+    [attendance, todayStr]
   );
 
   // Tạo danh sách 30 ngày gần nhất
@@ -119,11 +124,19 @@ export default function AttendanceScreen() {
   const handleShiftSelect = (
     shift: ShiftType
   ) => {
-    checkIn(selectedDate, shift);
+    const isToday =
+      selectedDate === todayStr;
+    checkIn(selectedDate, shift, {
+      autoComplete: !isToday,
+    });
     setShowShiftPicker(false);
     Alert.alert(
-      'Check In thành công!',
-      `Đã ghi nhận ca "${SHIFT_LABELS[shift]}" cho ngày ${selectedDate}.`
+      isToday
+        ? 'Check In thành công!'
+        : 'Đã lưu công cho ngày trước',
+      isToday
+        ? `Đã ghi nhận ca "${SHIFT_LABELS[shift]}" cho ngày ${selectedDate}.`
+        : `Đã ghi nhận ${config[shift].baseHours + config[shift].overtimeHours} giờ cho ca "${SHIFT_LABELS[shift]}" ngày ${selectedDate}.`
     );
   };
 
@@ -793,4 +806,3 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.onSurfaceVariant,
   },
 });
-
