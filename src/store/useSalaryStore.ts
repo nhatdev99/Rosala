@@ -10,6 +10,7 @@ import {
 export interface SalaryState {
   config: SalaryConfig;
   attendance: AttendanceRecord[];
+  lastPastCheckInHours: number;
   
   // Actions
   updateConfig: (
@@ -39,6 +40,18 @@ export interface SalaryState {
    * tự tính actualHours
    */
   checkOut: (id: string) => void;
+
+  /** Lưu số giờ check-in ngày trước gần nhất */
+  setLastPastCheckInHours: (hours: number) => void;
+
+  /**
+   * Tạo bản ghi cho ngày trước, nhập tay số giờ làm
+   */
+  checkInPastDate: (
+    date: string,
+    shiftType: ShiftType,
+    totalHours: number
+  ) => void;
 }
 
 const defaultConfig: SalaryConfig = {
@@ -74,6 +87,7 @@ export const useSalaryStore = create<SalaryState>()(
     (set, get) => ({
       config: defaultConfig,
       attendance: [],
+      lastPastCheckInHours: 12,
 
       updateConfig: (newConfig) =>
         set((state) => ({
@@ -183,6 +197,67 @@ export const useSalaryStore = create<SalaryState>()(
               };
             }
           ),
+        }));
+      },
+
+      setLastPastCheckInHours: (hours) =>
+        set({
+          lastPastCheckInHours: Math.max(
+            0.5,
+            Math.min(24, hours)
+          ),
+        }),
+
+      checkInPastDate: (
+        date,
+        shiftType,
+        totalHours
+      ) => {
+        const { config } = get();
+        const shiftCfg = config[shiftType];
+        const safeHours = Math.max(
+          0.5,
+          Math.min(24, totalHours)
+        );
+        const actual = Math.min(
+          safeHours,
+          shiftCfg.baseHours
+        );
+        const ot = Math.max(
+          0,
+          safeHours - shiftCfg.baseHours
+        );
+
+        const checkIn = new Date(
+          `${date}T08:00:00`
+        );
+        const checkOut = new Date(
+          checkIn.getTime() +
+            safeHours * 60 * 60 * 1000
+        );
+
+        const newRecord: AttendanceRecord = {
+          id: `${date}-${Date.now()}`,
+          date,
+          shiftType,
+          actualHours:
+            Math.round(actual * 100) / 100,
+          overtimeHours:
+            Math.round(ot * 100) / 100,
+          checkInTime:
+            checkIn.toISOString(),
+          checkOutTime:
+            checkOut.toISOString(),
+        };
+
+        set((state) => ({
+          attendance: [
+            ...state.attendance,
+            newRecord,
+          ],
+          lastPastCheckInHours:
+            Math.round(safeHours * 10) /
+            10,
         }));
       },
     }),
