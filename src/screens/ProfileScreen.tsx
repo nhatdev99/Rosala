@@ -256,9 +256,9 @@ export default function ProfileScreen() {
         <View style={styles.menuSection}>
           <Text style={styles.sectionTitle}>Công ty</Text>
           <View style={styles.menuCard}>
-            <MenuItem icon="document-text-outline" title="Chính sách & Quy định" theme={theme} styles={styles} />
+            <MenuItem icon="document-text-outline" title="Chính sách & Quy định" theme={theme} styles={styles} onPress={() => navigation.navigate('Policy')} />
             <View style={styles.divider} />
-            <MenuItem icon="help-circle-outline" title="Hỗ trợ & Góp ý" theme={theme} styles={styles} />
+            <MenuItem icon="help-circle-outline" title="Hỗ trợ & Góp ý" theme={theme} styles={styles} onPress={() => navigation.navigate('SupportFeedback')} />
           </View>
         </View>
 
@@ -274,8 +274,8 @@ export default function ProfileScreen() {
   );
 }
 
-const MenuItem = ({ icon, title, theme, styles }: any) => (
-  <TouchableOpacity style={styles.menuItem}>
+const MenuItem = ({ icon, title, theme, styles, onPress }: any) => (
+  <TouchableOpacity style={styles.menuItem} onPress={onPress}>
     <View style={styles.menuItemLeft}>
       <View style={styles.menuIconContainer}>
         <Ionicons name={icon} size={20} color={theme.colors.onSurfaceVariant} />
