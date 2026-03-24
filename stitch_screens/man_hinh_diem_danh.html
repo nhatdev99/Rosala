@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary-container": "#ffffff",
+              "on-primary": "#ffffff",
+              "on-surface": "#191c23",
+              "surface-container-lowest": "#ffffff",
+              "primary": "#005bbf",
+              "error": "#ba1a1a",
+              "primary-fixed": "#d8e2ff",
+              "tertiary": "#1a6c23",
+              "error-container": "#ffdad6",
+              "surface-tint": "#005bc0",
+              "on-surface-variant": "#414754",
+              "on-primary-container": "#ffffff",
+              "on-tertiary-fixed-variant": "#005312",
+              "on-secondary-fixed": "#001a41",
+              "on-tertiary": "#ffffff",
+              "primary-fixed-dim": "#adc7ff",
+              "secondary-container": "#b2c9fe",
+              "secondary-fixed": "#d8e2ff",
+              "on-error": "#ffffff",
+              "surface": "#f9f9ff",
+              "primary-container": "#1a73e8",
+              "inverse-primary": "#adc7ff",
+              "background": "#f9f9ff",
+              "surface-container-high": "#e6e8f2",
+              "outline": "#727785",
+              "inverse-surface": "#2d3038",
+              "tertiary-container": "#37863a",
+              "on-error-container": "#93000a",
+              "secondary-fixed-dim": "#afc7fb",
+              "tertiary-fixed-dim": "#88d982",
+              "secondary": "#475e8c",
+              "on-secondary": "#ffffff",
+              "on-secondary-fixed-variant": "#2e4673",
+              "surface-container-highest": "#e0e2ec",
+              "surface-container-low": "#f2f3fd",
+              "surface-bright": "#f9f9ff",
+              "on-background": "#191c23",
+              "on-secondary-container": "#3d5481",
+              "on-tertiary-fixed": "#002204",
+              "on-primary-fixed": "#001a41",
+              "tertiary-fixed": "#a3f69c",
+              "surface-variant": "#e0e2ec",
+              "inverse-on-surface": "#eff0fa",
+              "outline-variant": "#c1c6d6",
+              "on-primary-fixed-variant": "#004493",
+              "surface-dim": "#d8d9e3",
+              "surface-container": "#ecedf7"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-effect {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .active-scale:active {
+            transform: scale(0.95);
+        }
+        .check-in-gradient {
+            background: linear-gradient(135deg, #005bbf 0%, #1a73e8 100%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body text-on-surface min-h-screen flex flex-col items-center">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-slate-100/50 dark:bg-slate-900/50 backdrop-blur-md">
+<div class="flex justify-between items-center px-6 h-16 w-full max-w-md mx-auto">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-container-highest">
+<img alt="User profile photo" class="w-full h-full object-cover" data-alt="Close-up professional portrait of a friendly man with a neat beard in a sunlit office environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXCCv4Oj-lZGnJBdCeNEl0NwPbQrnKYYhaHOm9vf1Swi4wpQjC8x33AG9sSLidkbua0r5X-LPPeAlQ54AYvFlY6d3wf9Yo-AeCq3XImNoQ9lg40TV8dBy31CfpuPvT4PT8yEaCWp6DdxGIp9N1-Df5RlcNX9FW7dxqsLaJLCQ6QjQTad5xMgu9daSeN_VWlTk-lZOAmfQExZbpKHGDfpWmtgYoto1OF4DnrtGNufV5TMN9aOWkXH_on59vxjkN9SZC2HCmKWPVEoJc"/>
+</div>
+<div>
+<p class="text-[10px] font-label text-outline uppercase tracking-widest">Welcome back</p>
+<h1 class="font-headline font-bold tracking-tight text-lg text-blue-700">Good morning, John!</h1>
+</div>
+</div>
+<button class="active:scale-95 duration-150 transition-opacity hover:opacity-80">
+<span class="material-symbols-outlined text-blue-700">notifications</span>
+</button>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="w-full max-w-md px-6 pt-24 pb-32 flex flex-col items-center flex-grow">
+<!-- Status Indicator -->
+<div class="flex items-center gap-2 mb-8 bg-surface-container-low px-4 py-2 rounded-full">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-tertiary"></span>
+</span>
+<span class="font-label text-xs font-semibold text-tertiary tracking-wide uppercase">Active Shift Pending</span>
+</div>
+<!-- Digital Clock Section -->
+<div class="text-center mb-12">
+<div class="font-headline font-extrabold text-6xl tracking-tighter text-on-surface mb-1">
+                08:45<span class="text-primary-container animate-pulse">:</span>22
+            </div>
+<div class="font-label text-sm text-outline tracking-widest uppercase">Monday, Oct 23, 2023</div>
+</div>
+<!-- The "Precise Anchor" Check-In Button -->
+<div class="relative flex items-center justify-center w-full aspect-square max-w-[280px] mb-12">
+<!-- Decorative outer ring -->
+<div class="absolute inset-0 rounded-full border border-primary/10 animate-pulse"></div>
+<div class="absolute inset-4 rounded-full border border-primary/5"></div>
+<!-- Main CTA -->
+<button class="relative z-10 w-full h-full rounded-full check-in-gradient flex flex-col items-center justify-center text-white shadow-[0_8px_32px_rgba(0,91,191,0.25)] active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined text-5xl mb-2" style="font-variation-settings: 'FILL' 1;">login</span>
+<span class="font-headline font-extrabold text-2xl tracking-tight">Check In</span>
+<span class="font-label text-[10px] opacity-80 uppercase tracking-widest mt-1">HQ Office • Floor 4</span>
+</button>
+</div>
+<!-- Location Bento Card -->
+<div class="w-full bg-surface-container-lowest rounded-xl p-5 shadow-[0_4px_20px_rgba(25,28,35,0.04)]">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl">location_on</span>
+<span class="font-headline font-bold text-on-surface">Work Location</span>
+</div>
+<span class="font-label text-xs font-bold text-tertiary bg-tertiary-container/10 px-2 py-1 rounded-lg">In Zone</span>
+</div>
+<!-- Map Preview -->
+<div class="relative w-full h-32 rounded-lg overflow-hidden bg-surface-container-highest">
+<img class="w-full h-full object-cover opacity-80 grayscale-[0.3]" data-alt="Modern minimalist city map view with blue navigation pins and soft shaded streets" data-location="San Francisco, Financial District" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBFM6pz6hglfkjGIOOs8NhlWByxsk82HAfMW67WUk7k_wXkJDXplff3Dh5aVbwTz1tnxbncfxTMEsolwUn5w6tRLHW-4EKe8Gm9w56MWy6p86SzPv5E67RvTzH8_zIIX_rrW_1BAIHD2JbYt8i8npVZcxK0jIm-Nd5JuB-tma_NGF_MEH428ZuOokEqA6ro4O2bIbL_mxeM37MUZKHPlnJS5Fvf-z0UE6oZMpwAIuCks4dnGS_6dLwYM1OglHpu9Gpcc2tqQSZIAxRv"/>
+<!-- Map Overlay Gradient -->
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/40 to-transparent"></div>
+<!-- Center Pin Pulse -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+<div class="w-4 h-4 bg-primary rounded-full border-2 border-white shadow-lg"></div>
+<div class="absolute -inset-2 bg-primary/20 rounded-full animate-ping"></div>
+</div>
+</div>
+<div class="mt-3 flex justify-between items-end">
+<div>
+<p class="text-xs text-on-surface-variant font-medium">101 California St.</p>
+<p class="text-[10px] text-outline">San Francisco, CA 94111</p>
+</div>
+<button class="text-primary font-headline text-xs font-bold hover:underline">View Map</button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-2 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl bg-opacity-70 z-50 rounded-t-3xl shadow-[0_-8px_24px_rgba(25,28,35,0.06)] max-w-md left-1/2 -translate-x-1/2 border-t border-slate-100/10">
+<!-- Attendance (Active) -->
+<a class="flex flex-col items-center justify-center bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200 rounded-2xl px-3 py-1.5 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">timer</span>
+<span class="font-['Inter'] text-[11px] font-medium tracking-wide">Attendance</span>
+</a>
+<!-- Logs (Inactive) -->
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 px-3 py-1.5 active:scale-90 transition-transform duration-200 hover:text-blue-600 dark:hover:text-blue-300" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+<span class="font-['Inter'] text-[11px] font-medium tracking-wide">Logs</span>
+</a>
+<!-- Payroll (Inactive) -->
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 px-3 py-1.5 active:scale-90 transition-transform duration-200 hover:text-blue-600 dark:hover:text-blue-300" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-['Inter'] text-[11px] font-medium tracking-wide">Payroll</span>
+</a>
+<!-- Profile (Inactive) -->
+<a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 px-3 py-1.5 active:scale-90 transition-transform duration-200 hover:text-blue-600 dark:hover:text-blue-300" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-['Inter'] text-[11px] font-medium tracking-wide">Profile</span>
+</a>
+</nav>
+</body></html>

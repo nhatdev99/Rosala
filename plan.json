@@ -1,0 +1,249 @@
+{
+    "project": {
+        "name": "Rosala",
+        "type": "mobile_app",
+        "framework": "React Native (Expo)",
+        "state_management": "Zustand",
+        "database": "SQLite",
+        "optional_backend": [
+            "Firebase",
+            "Supabase"
+        ]
+    },
+    "architecture": {
+        "layers": [
+            "UI Layer",
+            "State Layer (Zustand)",
+            "Service Layer (Business Logic)",
+            "Persistence Layer (SQLite/API)"
+        ]
+    },
+    "data_model": {
+        "ShiftConfig": {
+            "baseHours": "number",
+            "overtimeHours": "number",
+            "baseRate": "number",
+            "overtimeRate": "number"
+        },
+        "SalaryConfig": {
+            "day": "ShiftConfig",
+            "night": "ShiftConfig",
+            "offDay": "ShiftConfig",
+            "offNight": "ShiftConfig"
+        },
+        "AttendanceRecord": {
+            "id": "string",
+            "date": "YYYY-MM-DD",
+            "shiftType": [
+                "day",
+                "night",
+                "offDay",
+                "offNight"
+            ],
+            "actualHours": "number",
+            "overtimeHours": "number",
+            "note": "string?"
+        },
+        "MonthlySalary": {
+            "month": "YYYY-MM",
+            "totalBaseSalary": "number",
+            "totalOvertimeSalary": "number",
+            "totalSalary": "number"
+        }
+    },
+    "business_logic": {
+        "daily_salary_formula": {
+            "baseSalary": "baseHours * baseRate",
+            "overtimeSalary": "overtimeHours * overtimeRate",
+            "total": "baseSalary + overtimeSalary"
+        },
+        "monthly_salary_formula": {
+            "totalMonth": "sum(all daily salaries)"
+        },
+        "functions": [
+            {
+                "name": "calculateDailySalary",
+                "input": [
+                    "AttendanceRecord",
+                    "SalaryConfig"
+                ],
+                "output": {
+                    "base": "number",
+                    "ot": "number",
+                    "total": "number"
+                }
+            },
+            {
+                "name": "calculateMonthlySalary",
+                "input": [
+                    "AttendanceRecord[]",
+                    "SalaryConfig"
+                ],
+                "output": "MonthlySalary"
+            }
+        ]
+    },
+    "features": {
+        "salary_config": {
+            "description": "Cài đặt lương cho từng loại ca",
+            "fields": [
+                "baseHours",
+                "overtimeHours",
+                "baseRate",
+                "overtimeRate"
+            ],
+            "shift_types": [
+                "day",
+                "night",
+                "offDay",
+                "offNight"
+            ],
+            "presets": [
+                "factory",
+                "office",
+                "freelancer"
+            ]
+        },
+        "attendance": {
+            "modes": [
+                "manual",
+                "quick_tap"
+            ],
+            "fields": [
+                "date",
+                "shiftType",
+                "actualHours",
+                "overtimeHours",
+                "note"
+            ],
+            "quick_actions": [
+                "Add Day Shift",
+                "Add Night Shift",
+                "Add Off Shift"
+            ]
+        },
+        "salary_calculation": {
+            "views": [
+                "monthly_summary",
+                "daily_breakdown"
+            ],
+            "metrics": [
+                "total_days",
+                "total_hours",
+                "total_overtime",
+                "total_salary"
+            ]
+        },
+        "reports": {
+            "features": [
+                "monthly_comparison",
+                "bar_chart",
+                "growth_percentage"
+            ]
+        },
+        "widgets": {
+            "quick_attendance": [
+                "day",
+                "night",
+                "offDay",
+                "offNight"
+            ],
+            "salary_calculator": [
+                "input_days",
+                "input_overtime",
+                "instant_result"
+            ]
+        }
+    },
+    "ui_ux": {
+        "themes": [
+            {
+                "name": "cute",
+                "style": "pastel, rounded, soft animation"
+            },
+            {
+                "name": "minimal",
+                "style": "clean, white, simple typography"
+            },
+            {
+                "name": "tech",
+                "style": "dark mode, neon, glassmorphism"
+            }
+        ],
+        "navigation": {
+            "type": "bottom_tabs",
+            "tabs": [
+                "Home",
+                "Attendance",
+                "Salary",
+                "Report",
+                "Settings"
+            ]
+        }
+    },
+    "state_management": {
+        "store": {
+            "config": "SalaryConfig",
+            "attendance": "AttendanceRecord[]",
+            "currentMonth": "string"
+        },
+        "actions": [
+            "addRecord",
+            "updateRecord",
+            "deleteRecord",
+            "updateConfig",
+            "calculateMonth"
+        ]
+    },
+    "roadmap": {
+        "phase_1_mvp": {
+            "duration": "5_days",
+            "tasks": [
+                "init_project",
+                "setup_navigation",
+                "salary_config_crud",
+                "attendance_crud",
+                "basic_salary_calculation"
+            ]
+        },
+        "phase_2_ui": {
+            "duration": "7_days",
+            "tasks": [
+                "implement_theme_system",
+                "quick_add_widget",
+                "monthly_summary_ui"
+            ]
+        },
+        "phase_3_reports": {
+            "duration": "5_days",
+            "tasks": [
+                "chart_integration",
+                "monthly_comparison",
+                "export_csv"
+            ]
+        },
+        "phase_4_advanced": {
+            "tasks": [
+                "cloud_sync",
+                "multi_user_support",
+                "notification_reminder"
+            ]
+        }
+    },
+    "validation_rules": [
+        "no_duplicate_date_record",
+        "hours_must_be_positive",
+        "overtime_not_exceed_limit",
+        "shift_type_must_be_valid"
+    ],
+    "performance": [
+        "memoized_selectors",
+        "lazy_load_month_data"
+    ],
+    "future_extensions": [
+        "personal_income_tax_calculation_vn",
+        "multiple_jobs_management",
+        "web_admin_dashboard",
+        "ai_salary_prediction"
+    ]
+}
