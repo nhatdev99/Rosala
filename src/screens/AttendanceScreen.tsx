@@ -14,7 +14,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../utils/theme';
+import { useAppTheme } from '../hooks/useAppTheme';
 import {
   format,
   subDays,
@@ -38,6 +38,9 @@ const SHIFT_LABELS: Record<
 };
 
 export default function AttendanceScreen() {
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   const [currentTime, setCurrentTime] =
     useState(new Date());
   const [showDatePicker, setShowDatePicker] =
@@ -525,7 +528,7 @@ export default function AttendanceScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.surface,

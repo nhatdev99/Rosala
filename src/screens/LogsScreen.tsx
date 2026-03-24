@@ -8,9 +8,10 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../utils/theme';
+import { useAppTheme } from '../hooks/useAppTheme';
 import {
   format,
   startOfMonth,
@@ -35,8 +36,14 @@ const SHIFT_LABELS: Record<string, string> = {
 };
 
 export default function LogsScreen() {
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   const attendance = useSalaryStore(
     (s) => s.attendance
+  );
+  const deleteRecord = useSalaryStore(
+    (s) => s.deleteRecord
   );
   const [currentMonth, setCurrentMonth] =
     useState(new Date());
@@ -58,6 +65,21 @@ export default function LogsScreen() {
       setCurrentMonth((m) =>
         addMonths(m, 1)
       );
+  };
+
+  const handleDeleteRecord = (id: string) => {
+    Alert.alert(
+      'Xoá bản ghi',
+      'Bạn có chắc muốn xoá bản ghi chấm công này không?',
+      [
+        { text: 'Huỷ', style: 'cancel' },
+        {
+          text: 'Xoá',
+          style: 'destructive',
+          onPress: () => deleteRecord(id),
+        },
+      ]
+    );
   };
 
   // Tạo lưới ngày cho tháng
@@ -411,6 +433,20 @@ export default function LogsScreen() {
                             : 'ĐANG LÀM'}
                         </Text>
                       </View>
+                      <TouchableOpacity
+                        style={styles.deleteBtn}
+                        onPress={() =>
+                          handleDeleteRecord(
+                            record.id
+                          )
+                        }
+                      >
+                        <Ionicons
+                          name="trash-outline"
+                          size={18}
+                          color={theme.colors.error}
+                        />
+                      </TouchableOpacity>
                     </View>
 
                     <View
@@ -512,7 +548,7 @@ export default function LogsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.surface,
@@ -721,6 +757,15 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: 'bold',
     letterSpacing: 0.5,
+  },
+  deleteBtn: {
+    marginLeft: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.errorContainer,
   },
   logCardBottom: {
     flexDirection: 'row',

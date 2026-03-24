@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../utils/theme';
+import { useAppTheme } from '../hooks/useAppTheme';
 import {
   format,
   subDays,
@@ -18,6 +18,9 @@ import { useSalaryStore } from '../store/useSalaryStore';
 import { useNavigation } from '@react-navigation/native';
 
 export default function ProfileScreen() {
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   const navigation = useNavigation<any>();
   const attendance = useSalaryStore(
     (s) => s.attendance
@@ -206,24 +209,56 @@ export default function ProfileScreen() {
                 }
               />
             </TouchableOpacity>
+            <View style={styles.divider} />
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() =>
+                navigation.navigate(
+                  'ThemeSettings'
+                )
+              }
+            >
+              <View style={styles.menuItemLeft}>
+                <View style={styles.menuIconContainer}>
+                  <Ionicons
+                    name="color-palette-outline"
+                    size={20}
+                    color={
+                      theme.colors
+                        .onSurfaceVariant
+                    }
+                  />
+                </View>
+                <Text style={styles.menuTitle}>
+                  Cài đặt giao diện
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={
+                  theme.colors.outline
+                }
+              />
+            </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.menuSection}>
           <Text style={styles.sectionTitle}>Tài khoản</Text>
           <View style={styles.menuCard}>
-            <MenuItem icon="person-outline" title="Thông tin cá nhân" />
+            <MenuItem icon="person-outline" title="Thông tin cá nhân" theme={theme} styles={styles} />
             <View style={styles.divider} />
-            <MenuItem icon="notifications-outline" title="Cài đặt thông báo" />
+            <MenuItem icon="notifications-outline" title="Cài đặt thông báo" theme={theme} styles={styles} />
           </View>
         </View>
 
         <View style={styles.menuSection}>
           <Text style={styles.sectionTitle}>Công ty</Text>
           <View style={styles.menuCard}>
-            <MenuItem icon="document-text-outline" title="Chính sách & Quy định" />
+            <MenuItem icon="document-text-outline" title="Chính sách & Quy định" theme={theme} styles={styles} />
             <View style={styles.divider} />
-            <MenuItem icon="help-circle-outline" title="Hỗ trợ & Góp ý" />
+            <MenuItem icon="help-circle-outline" title="Hỗ trợ & Góp ý" theme={theme} styles={styles} />
           </View>
         </View>
 
@@ -239,7 +274,7 @@ export default function ProfileScreen() {
   );
 }
 
-const MenuItem = ({ icon, title }: any) => (
+const MenuItem = ({ icon, title, theme, styles }: any) => (
   <TouchableOpacity style={styles.menuItem}>
     <View style={styles.menuItemLeft}>
       <View style={styles.menuIconContainer}>
@@ -251,7 +286,7 @@ const MenuItem = ({ icon, title }: any) => (
   </TouchableOpacity>
 );
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.surface,

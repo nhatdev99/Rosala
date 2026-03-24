@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../utils/theme';
+import { useAppTheme } from '../hooks/useAppTheme';
 import { useSalaryStore } from '../store/useSalaryStore';
 import { ShiftType } from '../utils/salaryCalculator';
 
@@ -79,6 +79,8 @@ const FIELDS = [
 export default function SalaryConfigScreen({
   navigation,
 }: any) {
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const config = useSalaryStore(
     (s) => s.config
   );
@@ -407,7 +409,7 @@ export default function SalaryConfigScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.surface,
