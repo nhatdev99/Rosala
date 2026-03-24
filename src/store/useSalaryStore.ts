@@ -31,7 +31,10 @@ export interface SalaryState {
    */
   checkIn: (
     date: string,
-    shiftType: ShiftType
+    shiftType: ShiftType,
+    options?: {
+      autoComplete?: boolean;
+    }
   ) => void;
 
   /**
@@ -110,19 +113,30 @@ export const useSalaryStore = create<SalaryState>()(
         })),
 
       // Check-in: Tạo record mới
-      checkIn: (date, shiftType) => {
+      checkIn: (date, shiftType, options) => {
         const now = new Date().toISOString();
         const id = `${date}-${Date.now()}`;
         const { config } = get();
         const shiftCfg = config[shiftType];
+        const autoComplete =
+          options?.autoComplete ?? false;
 
         const newRecord: AttendanceRecord = {
           id,
           date,
           shiftType,
-          actualHours: 0,
-          overtimeHours: 0,
-          checkInTime: now,
+          actualHours: autoComplete
+            ? shiftCfg.baseHours
+            : 0,
+          overtimeHours: autoComplete
+            ? shiftCfg.overtimeHours
+            : 0,
+          checkInTime: autoComplete
+            ? undefined
+            : now,
+          checkOutTime: autoComplete
+            ? now
+            : undefined,
         };
 
         set((state) => ({
@@ -194,4 +208,3 @@ export const useSalaryStore = create<SalaryState>()(
     }
   )
 );
-

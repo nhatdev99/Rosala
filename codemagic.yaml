@@ -18,7 +18,7 @@ workflows:
     scripts:
       - name: Cài đặt dependencies
         script: |
-          npm ci --legacy-peer-deps
+          npm install --legacy-peer-deps
 
       - name: Tạo native iOS project (Expo prebuild)
         script: |
