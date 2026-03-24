@@ -206,6 +206,38 @@ export default function ProfileScreen() {
                 }
               />
             </TouchableOpacity>
+            <View style={styles.divider} />
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() =>
+                navigation.navigate(
+                  'ThemeSettings'
+                )
+              }
+            >
+              <View style={styles.menuItemLeft}>
+                <View style={styles.menuIconContainer}>
+                  <Ionicons
+                    name="color-palette-outline"
+                    size={20}
+                    color={
+                      theme.colors
+                        .onSurfaceVariant
+                    }
+                  />
+                </View>
+                <Text style={styles.menuTitle}>
+                  Cài đặt giao diện
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={
+                  theme.colors.outline
+                }
+              />
+            </TouchableOpacity>
           </View>
         </View>
 
