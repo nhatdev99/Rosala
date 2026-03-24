@@ -59,7 +59,7 @@ workflows:
           cp -r build_output/Build/Products/Release-iphoneos/*.app Payload/
 
           # Nén thành unsigned IPA
-          zip -r ../ron-admin-unsigned.ipa Payload
+          zip -r ../rosala-unsigned.ipa Payload
 
     artifacts:
       - rosala-unsigned.ipa
