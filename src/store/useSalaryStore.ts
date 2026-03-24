@@ -6,6 +6,7 @@ import {
   SalaryConfig,
   ShiftType,
 } from '../utils/salaryCalculator';
+import { useSyncStore } from './useSyncStore';
 
 export interface SalaryState {
   config: SalaryConfig;
@@ -79,20 +80,25 @@ export const useSalaryStore = create<SalaryState>()(
       attendance: [],
 
       updateConfig: (newConfig) =>
-        set((state) => ({
-          config: {
+        set((state) => {
+          const nextConfig = {
             ...state.config,
             ...newConfig,
-          },
-        })),
+          };
+          useSyncStore.getState().queueAction('salary_config_update', nextConfig);
+          return { config: nextConfig };
+        }),
         
       addRecord: (record) =>
-        set((state) => ({
-          attendance: [
-            ...state.attendance,
-            record,
-          ],
-        })),
+        set((state) => {
+          useSyncStore.getState().queueAction('attendance_add', record);
+          return {
+            attendance: [
+              ...state.attendance,
+              record,
+            ],
+          };
+        }),
         
       updateRecord: (id, recordUpdate) =>
         set((state) => ({
@@ -105,12 +111,15 @@ export const useSalaryStore = create<SalaryState>()(
         })),
         
       deleteRecord: (id) =>
-        set((state) => ({
-          attendance:
-            state.attendance.filter(
-              (r) => r.id !== id
-            ),
-        })),
+        set((state) => {
+          useSyncStore.getState().queueAction('attendance_delete', { id });
+          return {
+            attendance:
+              state.attendance.filter(
+                (r) => r.id !== id
+              ),
+          };
+        }),
 
       // Check-in: Tạo record mới
       checkIn: (date, shiftType, options) => {
@@ -145,6 +154,7 @@ export const useSalaryStore = create<SalaryState>()(
             newRecord,
           ],
         }));
+        useSyncStore.getState().queueAction('attendance_checkin', newRecord);
       },
 
       // Check-out: Tính giờ làm thực tế
@@ -198,6 +208,7 @@ export const useSalaryStore = create<SalaryState>()(
             }
           ),
         }));
+        useSyncStore.getState().queueAction('attendance_checkout', { id, at: nowISO });
       },
     }),
     {

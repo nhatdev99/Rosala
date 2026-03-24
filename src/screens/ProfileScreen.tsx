@@ -16,6 +16,7 @@ import {
 } from 'date-fns';
 import { useSalaryStore } from '../store/useSalaryStore';
 import { useNavigation } from '@react-navigation/native';
+import { useAuthStore, useCurrentUser } from '../store/useAuthStore';
 
 export default function ProfileScreen() {
   const theme = useAppTheme();
@@ -25,6 +26,8 @@ export default function ProfileScreen() {
   const attendance = useSalaryStore(
     (s) => s.attendance
   );
+  const user = useCurrentUser();
+  const logout = useAuthStore((s) => s.logout);
 
   // Tính giờ làm 7 ngày gần nhất
   const weekHours = useMemo(() => {
@@ -72,14 +75,13 @@ export default function ProfileScreen() {
       <View style={styles.profileSection}>
         <View style={styles.avatarWrapper}>
           <View style={styles.avatarPlaceholder}>
-            <Ionicons
-              name="person"
-              size={48}
-              color={theme.colors.outline}
-            />
+            <Text style={styles.avatarText}>
+              {(user?.avatarId || 'A').slice(-1)}
+            </Text>
           </View>
           <TouchableOpacity
             style={styles.editAvatarBtn}
+            onPress={() => navigation.navigate('ProfileSettings')}
           >
             <Ionicons
               name="pencil"
@@ -90,10 +92,10 @@ export default function ProfileScreen() {
         </View>
         
         <Text style={styles.userName}>
-          Người dùng
+          {user?.fullName || 'Người dùng'}
         </Text>
         <Text style={styles.userRole}>
-          Nhân viên
+          {user?.role || 'Nhân viên'}
         </Text>
       </View>
 
@@ -247,9 +249,9 @@ export default function ProfileScreen() {
         <View style={styles.menuSection}>
           <Text style={styles.sectionTitle}>Tài khoản</Text>
           <View style={styles.menuCard}>
-            <MenuItem icon="person-outline" title="Thông tin cá nhân" theme={theme} styles={styles} />
+            <MenuItem icon="person-outline" title="Thông tin cá nhân" theme={theme} styles={styles} onPress={() => navigation.navigate('ProfileSettings')} />
             <View style={styles.divider} />
-            <MenuItem icon="notifications-outline" title="Cài đặt thông báo" theme={theme} styles={styles} />
+            <MenuItem icon="notifications-outline" title="Cài đặt thông báo" theme={theme} styles={styles} onPress={() => navigation.navigate('Notifications')} />
           </View>
         </View>
 
@@ -263,7 +265,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutBtn}>
+        <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
           <Ionicons name="log-out-outline" size={20} color={theme.colors.error} />
           <Text style={styles.logoutText}>Đăng xuất</Text>
         </TouchableOpacity>
@@ -328,6 +330,11 @@ const createStyles = (theme: any) => StyleSheet.create({
       theme.colors.surfaceContainerHigh,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  avatarText: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: theme.colors.onSurface,
   },
   editAvatarBtn: {
     position: 'absolute',

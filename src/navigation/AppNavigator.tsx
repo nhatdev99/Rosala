@@ -19,8 +19,13 @@ import ThemeSettingsScreen from '../screens/ThemeSettingsScreen';
 import PolicyScreen from '../screens/PolicyScreen';
 import SupportFeedbackScreen from '../screens/SupportFeedbackScreen';
 import FlashGuideScreen from '../screens/FlashGuideScreen';
+import AuthScreen from '../screens/AuthScreen';
+import ProfileSettingsScreen from '../screens/ProfileSettingsScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { useThemeStore } from '../store/useThemeStore';
+import { useCurrentUser } from '../store/useAuthStore';
+import { useNotificationStore } from '../store/useNotificationStore';
 
 const Tab = createBottomTabNavigator();
 const ProfileStack = createNativeStackNavigator();
@@ -54,6 +59,16 @@ const ProfileStackScreen = () => {
         name="SupportFeedback"
         component={SupportFeedbackScreen}
         options={{ headerShown: true, title: 'Hỗ trợ & Góp ý' }}
+      />
+      <ProfileStack.Screen
+        name="ProfileSettings"
+        component={ProfileSettingsScreen}
+        options={{ headerShown: true, title: 'Thông tin cá nhân' }}
+      />
+      <ProfileStack.Screen
+        name="Notifications"
+        component={NotificationsScreen}
+        options={{ headerShown: true, title: 'Thông báo' }}
       />
     </ProfileStack.Navigator>
   );
@@ -117,12 +132,27 @@ export default function AppNavigator() {
   const mode = useThemeStore((s) => s.mode);
   const systemScheme = useColorScheme();
   const [guideSeen, setGuideSeen] = useState<boolean | null>(null);
+  const user = useCurrentUser();
+  const addNotification = useNotificationStore((s) => s.addNotification);
 
   useEffect(() => {
     AsyncStorage.getItem(GUIDE_SEEN_KEY).then((v) => {
       setGuideSeen(v === '1');
     });
   }, []);
+
+  useEffect(() => {
+    const monthKey = `month_summary_${new Date().getFullYear()}_${new Date().getMonth() + 1}`;
+    AsyncStorage.getItem(monthKey).then((v) => {
+      if (v === '1') return;
+      addNotification({
+        type: 'salary_monthly_summary',
+        title: 'Tổng kết lương tháng',
+        message: 'Đã đến kỳ tổng kết lương tháng. Vui lòng kiểm tra màn Bảng lương.',
+      });
+      AsyncStorage.setItem(monthKey, '1');
+    });
+  }, [addNotification]);
 
   const markGuideSeen = async () => {
     await AsyncStorage.setItem(GUIDE_SEEN_KEY, '1');
@@ -149,12 +179,18 @@ export default function AppNavigator() {
       }}
     >
       <RootStack.Navigator screenOptions={{ headerShown: false }}>
-        {!guideSeen && (
-          <RootStack.Screen name="FlashGuide">
-            {() => <FlashGuideScreen onDone={markGuideSeen} />}
-          </RootStack.Screen>
+        {!user ? (
+          <RootStack.Screen name="Auth" component={AuthScreen} />
+        ) : (
+          <>
+            {!guideSeen && (
+              <RootStack.Screen name="FlashGuide">
+                {() => <FlashGuideScreen onDone={markGuideSeen} />}
+              </RootStack.Screen>
+            )}
+            <RootStack.Screen name="MainTabs" component={MainTabs} />
+          </>
         )}
-        <RootStack.Screen name="MainTabs" component={MainTabs} />
       </RootStack.Navigator>
     </NavigationContainer>
   );
