@@ -1,0 +1,65 @@
+workflows:
+  expo_ios_unsigned_release:
+    name: Expo iOS Unsigned Release
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+
+    environment:
+      node: 20
+      xcode: latest
+      vars:
+        CI: "true"
+
+    cache:
+      cache_paths:
+        - ~/.npm
+        - $HOME/Library/Caches/CocoaPods
+
+    scripts:
+      - name: Cài đặt dependencies
+        script: |
+          npm ci --legacy-peer-deps
+
+      - name: Tạo native iOS project (Expo prebuild)
+        script: |
+          npx expo prebuild --platform ios --clean
+
+      - name: Cài CocoaPods dependencies
+        script: |
+          cd ios
+          pod install
+
+      - name: Build Unsigned iOS App
+        script: |
+          cd ios
+
+          # Tìm workspace và scheme
+          WORKSPACE_NAME=$(ls -1 | grep -e '\.xcworkspace$' | head -n 1)
+          SCHEME_NAME=$(basename "$WORKSPACE_NAME" .xcworkspace)
+
+          echo "Building: $WORKSPACE_NAME / $SCHEME_NAME"
+
+          # Build với Code Signing tắt
+          xcodebuild build \
+            -workspace "$WORKSPACE_NAME" \
+            -scheme "$SCHEME_NAME" \
+            -configuration Release \
+            -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            -derivedDataPath build_output
+
+      - name: Đóng gói thành file .ipa
+        script: |
+          cd ios
+
+          # Tạo cấu trúc Payload cho IPA
+          mkdir -p Payload
+          cp -r build_output/Build/Products/Release-iphoneos/*.app Payload/
+
+          # Nén thành unsigned IPA
+          zip -r ../ron-admin-unsigned.ipa Payload
+
+    artifacts:
+      - rosala-unsigned.ipa
