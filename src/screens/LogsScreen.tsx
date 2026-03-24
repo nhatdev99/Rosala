@@ -1,169 +1,516 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import React, {
+  useState,
+  useMemo,
+} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../utils/theme';
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  getDay,
+  subMonths,
+  addMonths,
+  isAfter,
+  startOfDay,
+  parseISO,
+  differenceInMinutes,
+} from 'date-fns';
+import { vi } from 'date-fns/locale';
+import { useSalaryStore } from '../store/useSalaryStore';
+
+const SHIFT_LABELS: Record<string, string> = {
+  day: 'Ca ngày',
+  night: 'Ca đêm',
+  offDay: 'Nghỉ (ngày)',
+  offNight: 'Nghỉ (đêm)',
+};
 
 export default function LogsScreen() {
+  const attendance = useSalaryStore(
+    (s) => s.attendance
+  );
+  const [currentMonth, setCurrentMonth] =
+    useState(new Date());
+
+  const today = startOfDay(new Date());
+
+  // Không cho chọn tháng tương lai
+  const canGoNext = !isAfter(
+    startOfMonth(
+      addMonths(currentMonth, 1)
+    ),
+    today
+  );
+
+  const handlePrevMonth = () =>
+    setCurrentMonth((m) => subMonths(m, 1));
+  const handleNextMonth = () => {
+    if (canGoNext)
+      setCurrentMonth((m) =>
+        addMonths(m, 1)
+      );
+  };
+
+  // Tạo lưới ngày cho tháng
+  const monthStart = startOfMonth(
+    currentMonth
+  );
+  const monthEnd = endOfMonth(currentMonth);
+  const daysInMonth = eachDayOfInterval({
+    start: monthStart,
+    end: monthEnd,
+  });
+
+  // Padding đầu tháng (Thứ 2 = 0)
+  const startPadding =
+    (getDay(monthStart) + 6) % 7;
+
+  // Set ngày có record
+  const recordDates = useMemo(() => {
+    const set = new Set<string>();
+    attendance.forEach((r) => set.add(r.date));
+    return set;
+  }, [attendance]);
+
+  // Lọc logs theo tháng hiện tại
+  const monthStr = format(
+    currentMonth,
+    'yyyy-MM'
+  );
+  const monthlyLogs = useMemo(
+    () =>
+      attendance
+        .filter((r) =>
+          r.date.startsWith(monthStr)
+        )
+        .sort((a, b) =>
+          b.date.localeCompare(a.date)
+        ),
+    [attendance, monthStr]
+  );
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={
+        styles.contentContainer
+      }
+    >
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <View style={styles.avatarContainer}>
-            <Image 
-              source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB49OM4B0NHwTdtep_cEVpNO9SzkUzZ1DUYBBPUis3IRIdIdJJ2UBfqMwHEFRSgdAzR5gc1wvVnhIBzsgQdfqelck0YTPHVQiTya7G1DOlFEk5Kscleykz32EqEpPiWlhik8jy41e2m3VJbj4FxcfxntHKV2O1V1Oy_Qj9tE4tHbaAB5GvEdKhza_T__bEFmyaWSMB-uPeLidLFTLV2POV8TWlnGCcZaQ79D_546H3d2jCr-33uBGEYqqiE3Jq705XOSwBmI3HywFZQ' }}
-              style={styles.avatar}
-            />
-          </View>
-          <Text style={styles.appNameText}>PreciseAnchor</Text>
+        <View>
+          <Text
+            style={styles.calendarSubtitle}
+          >
+            KỲ HIỆN TẠI
+          </Text>
+          <Text style={styles.calendarTitle}>
+            {format(
+              currentMonth,
+              'MMMM yyyy',
+              { locale: vi }
+            )}
+          </Text>
         </View>
-        <TouchableOpacity style={styles.notificationBtn}>
-          <Ionicons name="notifications" size={24} color={theme.colors.outline} />
-        </TouchableOpacity>
+        <View style={styles.chevronGroup}>
+          <TouchableOpacity
+            style={styles.chevronBtn}
+            onPress={handlePrevMonth}
+          >
+            <Ionicons
+              name="chevron-back"
+              size={20}
+              color={theme.colors.primary}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.chevronBtn,
+              !canGoNext && {
+                opacity: 0.3,
+              },
+            ]}
+            onPress={handleNextMonth}
+            disabled={!canGoNext}
+          >
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={theme.colors.primary}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.mainCanvas}>
-        {/* Calendar Section */}
-        <View style={styles.calendarSection}>
-          <View style={styles.calendarHeader}>
-            <View>
-              <Text style={styles.calendarSubtitle}>CURRENT PERIOD</Text>
-              <Text style={styles.calendarTitle}>October 2023</Text>
-            </View>
-            <View style={styles.chevronGroup}>
-              <TouchableOpacity style={styles.chevronBtn}>
-                <Ionicons name="chevron-back" size={20} color={theme.colors.primary} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.chevronBtn}>
-                <Ionicons name="chevron-forward" size={20} color={theme.colors.primary} />
-              </TouchableOpacity>
-            </View>
+        {/* Calendar Grid */}
+        <View style={styles.calendarGrid}>
+          <View style={styles.weekDays}>
+            {[
+              'T2',
+              'T3',
+              'T4',
+              'T5',
+              'T6',
+              'T7',
+              'CN',
+            ].map((d) => (
+              <Text
+                key={d}
+                style={styles.weekDayText}
+              >
+                {d}
+              </Text>
+            ))}
           </View>
+          <View style={styles.daysGrid}>
+            {/* Padding cells */}
+            {Array.from({
+              length: startPadding,
+            }).map((_, i) => (
+              <View
+                key={`pad-${i}`}
+                style={styles.dayCell}
+              />
+            ))}
 
-          {/* Calendar Grid (Simplified View) */}
-          <View style={styles.calendarGrid}>
-            <View style={styles.weekDays}>
-              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
-                <Text key={day} style={styles.weekDayText}>{day.toUpperCase()}</Text>
-              ))}
-            </View>
-            <View style={styles.daysGrid}>
-              {/* Only rendering one active week for demonstration */}
-              {[25, 26, 27, 28, 29, 30].map(day => (
-                <View key={`prev-${day}`} style={styles.dayCell}>
-                  <Text style={styles.inactiveDayText}>{day}</Text>
+            {/* Actual days */}
+            {daysInMonth.map((day) => {
+              const dateStr = format(
+                day,
+                'yyyy-MM-dd'
+              );
+              const isToday =
+                dateStr ===
+                format(today, 'yyyy-MM-dd');
+              const hasRecord =
+                recordDates.has(dateStr);
+              const isFuture = isAfter(
+                startOfDay(day),
+                today
+              );
+
+              return (
+                <View
+                  key={dateStr}
+                  style={[
+                    styles.dayCell,
+                    isToday &&
+                      styles.currentDayCell,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      isFuture
+                        ? styles.inactiveDayText
+                        : styles.activeDayText,
+                      isToday &&
+                        styles.currentDayText,
+                    ]}
+                  >
+                    {format(day, 'd')}
+                  </Text>
+                  {hasRecord && (
+                    <View
+                      style={[
+                        styles.dayDot,
+                        isToday && {
+                          backgroundColor:
+                            theme.colors
+                              .onPrimary,
+                        },
+                      ]}
+                    />
+                  )}
                 </View>
-              ))}
-              {[1, 2, 3, 4].map(day => (
-                <View key={day} style={styles.dayCell}>
-                  <Text style={styles.activeDayText}>{day}</Text>
-                </View>
-              ))}
-              <View style={[styles.dayCell, styles.currentDayCell]}>
-                <Text style={styles.currentDayText}>5</Text>
-                <View style={styles.currentDayDot} />
-              </View>
-              {[6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(day => (
-                <View key={day} style={styles.dayCell}>
-                  <Text style={styles.activeDayText}>{day}</Text>
-                </View>
-              ))}
-            </View>
+              );
+            })}
           </View>
         </View>
 
         {/* Daily Logs */}
         <View style={styles.logsSection}>
           <View style={styles.logsHeader}>
-            <Text style={styles.logsTitle}>Daily Logs</Text>
-            <TouchableOpacity>
-              <Text style={styles.viewAllText}>View All</Text>
-            </TouchableOpacity>
+            <Text style={styles.logsTitle}>
+              Lịch sử chấm công
+            </Text>
+            <Text style={styles.logCount}>
+              {monthlyLogs.length} bản ghi
+            </Text>
           </View>
 
-          <View style={styles.logsList}>
-            <LogCard 
-              date="05" 
-              month="Oct" 
-              dayName="Thursday" 
-              totalHours="8h 15m Total" 
-              tagColor={theme.colors.tertiary}
-              status="APPROVED"
-              statusBg={theme.colors.tertiaryContainer}
-              statusColor={theme.colors.onTertiaryContainer}
-              checkIn="08:45 AM"
-              checkOut="05:00 PM"
-            />
-            <LogCard 
-              date="04" 
-              month="Oct" 
-              dayName="Wednesday" 
-              totalHours="7h 45m Total" 
-              tagColor={theme.colors.secondary}
-              status="PENDING"
-              statusBg={theme.colors.secondaryContainer}
-              statusColor={theme.colors.onSecondaryContainer}
-              checkIn="09:15 AM"
-              checkOut="05:00 PM"
-            />
-            <LogCard 
-              date="03" 
-              month="Oct" 
-              dayName="Tuesday" 
-              totalHours="9h 00m Total" 
-              tagColor={theme.colors.tertiary}
-              status="APPROVED"
-              statusBg={theme.colors.tertiaryContainer}
-              statusColor={theme.colors.onTertiaryContainer}
-              checkIn="08:30 AM"
-              checkOut="05:30 PM"
-            />
-          </View>
+          {monthlyLogs.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Ionicons
+                name="calendar-outline"
+                size={48}
+                color={theme.colors.outline}
+              />
+              <Text
+                style={styles.emptyText}
+              >
+                Chưa có dữ liệu tháng này
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.logsList}>
+              {monthlyLogs.map((record) => {
+                const dateObj = parseISO(
+                  record.date
+                );
+                const totalH =
+                  record.actualHours +
+                  record.overtimeHours;
+                const hours = Math.floor(
+                  totalH
+                );
+                const mins = Math.round(
+                  (totalH - hours) * 60
+                );
+                const checkedOut =
+                  !!record.checkOutTime;
+
+                return (
+                  <View
+                    key={record.id}
+                    style={styles.logCard}
+                  >
+                    <View
+                      style={
+                        styles.logCardTop
+                      }
+                    >
+                      <View
+                        style={
+                          styles.logCardTopLeft
+                        }
+                      >
+                        <View
+                          style={
+                            styles.dateCircle
+                          }
+                        >
+                          <Text
+                            style={
+                              styles.monthText
+                            }
+                          >
+                            {format(
+                              dateObj,
+                              'MMM',
+                              {
+                                locale: vi,
+                              }
+                            ).toUpperCase()}
+                          </Text>
+                          <Text
+                            style={
+                              styles.dateText
+                            }
+                          >
+                            {format(
+                              dateObj,
+                              'dd'
+                            )}
+                          </Text>
+                        </View>
+                        <View
+                          style={
+                            styles.dayInfo
+                          }
+                        >
+                          <Text
+                            style={
+                              styles.dayName
+                            }
+                          >
+                            {format(
+                              dateObj,
+                              'EEEE',
+                              {
+                                locale: vi,
+                              }
+                            )}
+                          </Text>
+                          <View
+                            style={
+                              styles.hoursRow
+                            }
+                          >
+                            <View
+                              style={[
+                                styles.hoursDot,
+                                {
+                                  backgroundColor:
+                                    checkedOut
+                                      ? theme
+                                          .colors
+                                          .tertiary
+                                      : theme
+                                          .colors
+                                          .secondary,
+                                },
+                              ]}
+                            />
+                            <Text
+                              style={
+                                styles.hoursText
+                              }
+                            >
+                              {checkedOut
+                                ? `${hours}h ${mins}m`
+                                : 'Đang làm...'}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                      <View
+                        style={[
+                          styles.statusBadge,
+                          {
+                            backgroundColor:
+                              checkedOut
+                                ? theme
+                                    .colors
+                                    .tertiaryContainer
+                                : theme
+                                    .colors
+                                    .secondaryContainer,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.statusBadgeText,
+                            {
+                              color:
+                                checkedOut
+                                  ? theme
+                                      .colors
+                                      .onTertiaryContainer
+                                  : theme
+                                      .colors
+                                      .onSecondaryContainer,
+                            },
+                          ]}
+                        >
+                          {checkedOut
+                            ? SHIFT_LABELS[
+                                record
+                                  .shiftType
+                              ]
+                            : 'ĐANG LÀM'}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View
+                      style={
+                        styles.logCardBottom
+                      }
+                    >
+                      <View
+                        style={
+                          styles.timeBlock
+                        }
+                      >
+                        <Text
+                          style={
+                            styles.timeLabel
+                          }
+                        >
+                          CHECK IN
+                        </Text>
+                        <View
+                          style={
+                            styles.timeValueRow
+                          }
+                        >
+                          <Ionicons
+                            name="log-in"
+                            size={16}
+                            color={
+                              theme.colors
+                                .primary
+                            }
+                          />
+                          <Text
+                            style={
+                              styles.timeValueText
+                            }
+                          >
+                            {record.checkInTime
+                              ? format(
+                                  new Date(
+                                    record.checkInTime
+                                  ),
+                                  'HH:mm'
+                                )
+                              : '--:--'}
+                          </Text>
+                        </View>
+                      </View>
+                      <View
+                        style={
+                          styles.timeBlock
+                        }
+                      >
+                        <Text
+                          style={
+                            styles.timeLabel
+                          }
+                        >
+                          CHECK OUT
+                        </Text>
+                        <View
+                          style={
+                            styles.timeValueRow
+                          }
+                        >
+                          <Ionicons
+                            name="log-out"
+                            size={16}
+                            color={
+                              theme.colors
+                                .error
+                            }
+                          />
+                          <Text
+                            style={
+                              styles.timeValueText
+                            }
+                          >
+                            {record.checkOutTime
+                              ? format(
+                                  new Date(
+                                    record.checkOutTime
+                                  ),
+                                  'HH:mm'
+                                )
+                              : '--:--'}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          )}
         </View>
       </View>
     </ScrollView>
   );
 }
-
-const LogCard = ({ date, month, dayName, totalHours, tagColor, status, statusBg, statusColor, checkIn, checkOut }: any) => (
-  <View style={styles.logCard}>
-    <View style={styles.logCardTop}>
-      <View style={styles.logCardTopLeft}>
-        <View style={styles.dateCircle}>
-          <Text style={styles.monthText}>{month.toUpperCase()}</Text>
-          <Text style={styles.dateText}>{date}</Text>
-        </View>
-        <View style={styles.dayInfo}>
-          <Text style={styles.dayName}>{dayName}</Text>
-          <View style={styles.hoursRow}>
-            <View style={[styles.hoursDot, { backgroundColor: tagColor }]} />
-            <Text style={styles.hoursText}>{totalHours}</Text>
-          </View>
-        </View>
-      </View>
-      <View style={[styles.statusBadge, { backgroundColor: statusBg }]}>
-        <Text style={[styles.statusBadgeText, { color: statusColor }]}>{status}</Text>
-      </View>
-    </View>
-    
-    <View style={styles.logCardBottom}>
-      <View style={styles.timeBlock}>
-        <Text style={styles.timeLabel}>CHECK IN</Text>
-        <View style={styles.timeValueRow}>
-          <Ionicons name="log-in" size={16} color={theme.colors.primary} />
-          <Text style={styles.timeValueText}>{checkIn}</Text>
-        </View>
-      </View>
-      <View style={styles.timeBlock}>
-        <Text style={styles.timeLabel}>CHECK OUT</Text>
-        <View style={styles.timeValueRow}>
-          <Ionicons name="log-out" size={16} color={theme.colors.error} />
-          <Text style={styles.timeValueText}>{checkOut}</Text>
-        </View>
-      </View>
-    </View>
-  </View>
-);
 
 const styles = StyleSheet.create({
   container: {
@@ -171,55 +518,17 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surface,
   },
   contentContainer: {
-    paddingBottom: 120, // space for bottom tab
+    paddingBottom: 120,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  avatarContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    overflow: 'hidden',
-    backgroundColor: theme.colors.primaryFixed,
-  },
-  avatar: {
-    width: '100%',
-    height: '100%',
-  },
-  appNameText: {
-    fontSize: 20,
-    fontWeight: '800',
-    fontFamily: theme.typography.headline,
-    color: theme.colors.onSecondaryFixedVariant,
-    letterSpacing: -0.5,
-  },
-  notificationBtn: {
-    padding: 8,
-  },
-  mainCanvas: {
-    paddingHorizontal: 24,
-    marginTop: 16,
-  },
-  calendarSection: {
-    marginBottom: 40,
-  },
-  calendarHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 24,
+    backgroundColor:
+      'rgba(255, 255, 255, 0.8)',
   },
   calendarSubtitle: {
     fontSize: 10,
@@ -234,6 +543,7 @@ const styles = StyleSheet.create({
     fontFamily: theme.typography.headline,
     color: theme.colors.onSurface,
     letterSpacing: -0.5,
+    textTransform: 'capitalize',
   },
   chevronGroup: {
     flexDirection: 'row',
@@ -244,13 +554,20 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.surfaceContainerHigh,
+    backgroundColor:
+      theme.colors.surfaceContainerHigh,
     borderRadius: 8,
   },
+  mainCanvas: {
+    paddingHorizontal: 24,
+    marginTop: 16,
+  },
   calendarGrid: {
-    backgroundColor: theme.colors.surfaceContainerLow,
+    backgroundColor:
+      theme.colors.surfaceContainerLow,
     borderRadius: 12,
     padding: 16,
+    marginBottom: 32,
   },
   weekDays: {
     flexDirection: 'row',
@@ -293,17 +610,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
-  currentDayDot: {
+  dayDot: {
     position: 'absolute',
     bottom: 4,
     width: 4,
     height: 4,
-    backgroundColor: theme.colors.onPrimary,
+    backgroundColor: theme.colors.tertiary,
     borderRadius: 2,
   },
-  logsSection: {
-    marginBottom: 24,
-  },
+  logsSection: { marginBottom: 24 },
   logsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -316,22 +631,29 @@ const styles = StyleSheet.create({
     fontFamily: theme.typography.headline,
     color: theme.colors.onSurface,
   },
-  viewAllText: {
+  logCount: {
     fontSize: 14,
     fontWeight: '600',
     color: theme.colors.primary,
   },
-  logsList: {
-    flexDirection: 'col',
-    gap: 16, // Assuming gap is supported or we will add margin
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 48,
+    gap: 12,
   },
+  emptyText: {
+    fontSize: 14,
+    color: theme.colors.outline,
+  },
+  logsList: { gap: 16 },
   logCard: {
-    backgroundColor: theme.colors.surfaceContainerLowest,
+    backgroundColor:
+      theme.colors.surfaceContainerLowest,
     padding: 20,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.05)',
-    marginBottom: 16, // Fallback for lack of gap on old versions
+    marginBottom: 16,
   },
   logCardTop: {
     flexDirection: 'row',
@@ -347,7 +669,8 @@ const styles = StyleSheet.create({
   dateCircle: {
     width: 48,
     height: 48,
-    backgroundColor: theme.colors.surfaceContainerHigh,
+    backgroundColor:
+      theme.colors.surfaceContainerHigh,
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
@@ -365,13 +688,12 @@ const styles = StyleSheet.create({
     color: theme.colors.onSurface,
     lineHeight: 20,
   },
-  dayInfo: {
-    justifyContent: 'center',
-  },
+  dayInfo: { justifyContent: 'center' },
   dayName: {
     fontSize: 14,
     fontWeight: '600',
     color: theme.colors.onSurface,
+    textTransform: 'capitalize',
   },
   hoursRow: {
     flexDirection: 'row',
@@ -407,9 +729,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: 'rgba(0,0,0,0.05)',
   },
-  timeBlock: {
-    flex: 1,
-  },
+  timeBlock: { flex: 1 },
   timeLabel: {
     fontSize: 10,
     fontWeight: 'bold',

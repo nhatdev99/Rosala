@@ -1,50 +1,159 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../utils/theme';
+import {
+  format,
+  subDays,
+  isAfter,
+  parseISO,
+} from 'date-fns';
+import { useSalaryStore } from '../store/useSalaryStore';
 
 export default function ProfileScreen() {
+  const attendance = useSalaryStore(
+    (s) => s.attendance
+  );
+
+  // Tính giờ làm 7 ngày gần nhất
+  const weekHours = useMemo(() => {
+    const cutoff = subDays(new Date(), 7);
+    return attendance
+      .filter((r) =>
+        isAfter(
+          parseISO(r.date),
+          cutoff
+        )
+      )
+      .reduce(
+        (sum, r) =>
+          sum +
+          r.actualHours +
+          r.overtimeHours,
+        0
+      );
+  }, [attendance]);
+
+  // Tổng ca tháng này
+  const monthStr = format(
+    new Date(),
+    'yyyy-MM'
+  );
+  const monthShifts = useMemo(
+    () =>
+      attendance.filter((r) =>
+        r.date.startsWith(monthStr)
+      ).length,
+    [attendance, monthStr]
+  );
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={
+        styles.contentContainer
+      }
+    >
       {/* Header Area (Background Color) */}
       <View style={styles.headerBackground} />
       
       {/* Profile Info Section */}
       <View style={styles.profileSection}>
         <View style={styles.avatarWrapper}>
-          <Image 
-            source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB49OM4B0NHwTdtep_cEVpNO9SzkUzZ1DUYBBPUis3IRIdIdJJ2UBfqMwHEFRSgdAzR5gc1wvVnhIBzsgQdfqelck0YTPHVQiTya7G1DOlFEk5Kscleykz32EqEpPiWlhik8jy41e2m3VJbj4FxcfxntHKV2O1V1Oy_Qj9tE4tHbaAB5GvEdKhza_T__bEFmyaWSMB-uPeLidLFTLV2POV8TWlnGCcZaQ79D_546H3d2jCr-33uBGEYqqiE3Jq705XOSwBmI3HywFZQ' }}
-            style={styles.avatarImg}
-          />
-          <TouchableOpacity style={styles.editAvatarBtn}>
-            <Ionicons name="pencil" size={16} color={theme.colors.onPrimary} />
+          <View style={styles.avatarPlaceholder}>
+            <Ionicons
+              name="person"
+              size={48}
+              color={theme.colors.outline}
+            />
+          </View>
+          <TouchableOpacity
+            style={styles.editAvatarBtn}
+          >
+            <Ionicons
+              name="pencil"
+              size={16}
+              color={theme.colors.onPrimary}
+            />
           </TouchableOpacity>
         </View>
         
-        <Text style={styles.userName}>Alice Wonder</Text>
-        <Text style={styles.userRole}>Senior Product Designer</Text>
+        <Text style={styles.userName}>
+          Người dùng
+        </Text>
+        <Text style={styles.userRole}>
+          Nhân viên
+        </Text>
       </View>
 
       <View style={styles.mainCanvas}>
         {/* Quick Stats */}
         <View style={styles.quickStatsGrid}>
           <View style={styles.statBox}>
-            <View style={styles.statIconContainer}>
-              <Ionicons name="time" size={24} color={theme.colors.primary} />
+            <View
+              style={
+                styles.statIconContainer
+              }
+            >
+              <Ionicons
+                name="time"
+                size={24}
+                color={
+                  theme.colors.primary
+                }
+              />
             </View>
             <View>
-              <Text style={styles.statLabel}>Giờ làm tuần này</Text>
-              <Text style={styles.statValue}>38.5h</Text>
+              <Text
+                style={styles.statLabel}
+              >
+                Giờ làm tuần này
+              </Text>
+              <Text
+                style={styles.statValue}
+              >
+                {weekHours.toFixed(1)}h
+              </Text>
             </View>
           </View>
           
           <View style={styles.statBox}>
-            <View style={[styles.statIconContainer, { backgroundColor: theme.colors.tertiaryContainer }]}>
-              <Ionicons name="calendar" size={24} color={theme.colors.tertiary} />
+            <View
+              style={[
+                styles.statIconContainer,
+                {
+                  backgroundColor:
+                    theme.colors
+                      .tertiaryContainer,
+                },
+              ]}
+            >
+              <Ionicons
+                name="calendar"
+                size={24}
+                color={
+                  theme.colors.tertiary
+                }
+              />
             </View>
             <View>
-              <Text style={styles.statLabel}>Ngày nhận lương</Text>
-              <Text style={styles.statValue}>05/11</Text>
+              <Text
+                style={styles.statLabel}
+              >
+                Ca tháng này
+              </Text>
+              <Text
+                style={styles.statValue}
+              >
+                {monthShifts}
+              </Text>
             </View>
           </View>
         </View>
@@ -126,13 +235,16 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 8,
   },
-  avatarImg: {
+  avatarPlaceholder: {
     width: 120,
     height: 120,
     borderRadius: 60,
     borderWidth: 4,
     borderColor: theme.colors.surface,
-    backgroundColor: theme.colors.surfaceContainerHigh,
+    backgroundColor:
+      theme.colors.surfaceContainerHigh,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   editAvatarBtn: {
     position: 'absolute',

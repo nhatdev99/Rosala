@@ -23,6 +23,8 @@ export interface AttendanceRecord {
   shiftType: ShiftType;
   actualHours: number;
   overtimeHours: number;
+  checkInTime?: string; // ISO timestamp
+  checkOutTime?: string; // ISO timestamp
   note?: string;
 }
 

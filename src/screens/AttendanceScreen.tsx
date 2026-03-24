@@ -1,12 +1,65 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Animated } from 'react-native';
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Modal,
+  Alert,
+  Platform,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../utils/theme';
-import { format } from 'date-fns';
+import {
+  format,
+  subDays,
+  isAfter,
+  startOfDay,
+  parseISO,
+} from 'date-fns';
+import { vi } from 'date-fns/locale';
+import { useSalaryStore } from '../store/useSalaryStore';
+import { ShiftType } from '../utils/salaryCalculator';
+
+// Nhãn tiếng Việt cho từng loại ca
+const SHIFT_LABELS: Record<
+  ShiftType,
+  string
+> = {
+  day: 'Ca ngày',
+  night: 'Ca đêm',
+  offDay: 'Ngày nghỉ (ngày)',
+  offNight: 'Ngày nghỉ (đêm)',
+};
 
 export default function AttendanceScreen() {
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] =
+    useState(new Date());
+  const [showDatePicker, setShowDatePicker] =
+    useState(false);
+  const [showShiftPicker, setShowShiftPicker] =
+    useState(false);
+  const [selectedDate, setSelectedDate] =
+    useState(
+      format(new Date(), 'yyyy-MM-dd')
+    );
 
+  const attendance = useSalaryStore(
+    (s) => s.attendance
+  );
+  const checkIn = useSalaryStore(
+    (s) => s.checkIn
+  );
+  const checkOut = useSalaryStore(
+    (s) => s.checkOut
+  );
+
+  // Đồng hồ thời gian thực
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -14,24 +67,113 @@ export default function AttendanceScreen() {
     return () => clearInterval(timer);
   }, []);
 
+  // Tìm record hôm nay chưa check-out
+  const todayStr = format(
+    new Date(),
+    'yyyy-MM-dd'
+  );
+  const activeRecord = useMemo(
+    () =>
+      attendance.find(
+        (r) =>
+          r.checkInTime && !r.checkOutTime
+      ),
+    [attendance]
+  );
+
+  // Tạo danh sách 30 ngày gần nhất
+  const dateOptions = useMemo(() => {
+    const today = new Date();
+    return Array.from({ length: 30 }, (_, i) => {
+      const d = subDays(today, i);
+      return format(d, 'yyyy-MM-dd');
+    });
+  }, []);
+
+  // Kiểm tra ngày đã có record chưa
+  const hasRecordForDate = (
+    date: string
+  ) =>
+    attendance.some((r) => r.date === date);
+
+  // Xử lý chọn ngày → mở modal chọn ca
+  const handleDateSelect = (
+    date: string
+  ) => {
+    if (hasRecordForDate(date)) {
+      Alert.alert(
+        'Đã tồn tại',
+        `Ngày ${date} đã có bản ghi.`
+      );
+      return;
+    }
+    setSelectedDate(date);
+    setShowDatePicker(false);
+    setShowShiftPicker(true);
+  };
+
+  // Xử lý chọn ca → check-in
+  const handleShiftSelect = (
+    shift: ShiftType
+  ) => {
+    checkIn(selectedDate, shift);
+    setShowShiftPicker(false);
+    Alert.alert(
+      'Check In thành công!',
+      `Đã ghi nhận ca "${SHIFT_LABELS[shift]}" cho ngày ${selectedDate}.`
+    );
+  };
+
+  // Xử lý check-out
+  const handleCheckOut = () => {
+    if (!activeRecord) return;
+    checkOut(activeRecord.id);
+    Alert.alert(
+      'Check Out thành công!',
+      'Đã ghi nhận giờ ra.'
+    );
+  };
+
+  // Button text & action
+  const isCheckedIn = !!activeRecord;
+
+  const handleMainAction = () => {
+    if (isCheckedIn) {
+      handleCheckOut();
+    } else {
+      setShowDatePicker(true);
+    }
+  };
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={
+        styles.contentContainer
+      }
+    >
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <View style={styles.avatarContainer}>
-            <Image 
-              source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCXCCv4Oj-lZGnJBdCeNEl0NwPbQrnKYYhaHOm9vf1Swi4wpQjC8x33AG9sSLidkbua0r5X-LPPeAlQ54AYvFlY6d3wf9Yo-AeCq3XImNoQ9lg40TV8dBy31CfpuPvT4PT8yEaCWp6DdxGIp9N1-Df5RlcNX9FW7dxqsLaJLCQ6QjQTad5xMgu9daSeN_VWlTk-lZOAmfQExZbpKHGDfpWmtgYoto1OF4DnrtGNufV5TMN9aOWkXH_on59vxjkN9SZC2HCmKWPVEoJc' }}
-              style={styles.avatar}
-            />
-          </View>
           <View>
-            <Text style={styles.welcomeText}>WELCOME BACK</Text>
-            <Text style={styles.nameText}>Good morning, John!</Text>
+            <Text style={styles.welcomeText}>
+              CHÀO MỪNG
+            </Text>
+            <Text style={styles.nameText}>
+              Rosala
+            </Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.notificationBtn}>
-          <Ionicons name="notifications" size={24} color={theme.colors.primaryContainer} />
+        <TouchableOpacity
+          style={styles.notificationBtn}
+        >
+          <Ionicons
+            name="notifications"
+            size={24}
+            color={
+              theme.colors.primaryContainer
+            }
+          />
         </TouchableOpacity>
       </View>
 
@@ -39,68 +181,346 @@ export default function AttendanceScreen() {
       <View style={styles.mainCanvas}>
         {/* Status Indicator */}
         <View style={styles.statusIndicator}>
-          <View style={styles.statusDotContainer}>
-            <View style={[styles.statusDot, { position: 'absolute', opacity: 0.3, transform: [{ scale: 1.5 }] }]} />
-            <View style={styles.statusDot} />
+          <View
+            style={styles.statusDotContainer}
+          >
+            <View
+              style={[
+                styles.statusDot,
+                {
+                  backgroundColor:
+                    isCheckedIn
+                      ? theme.colors.tertiary
+                      : theme.colors.outline,
+                },
+              ]}
+            />
           </View>
-          <Text style={styles.statusText}>ACTIVE SHIFT PENDING</Text>
+          <Text
+            style={[
+              styles.statusText,
+              {
+                color: isCheckedIn
+                  ? theme.colors.tertiary
+                  : theme.colors.outline,
+              },
+            ]}
+          >
+            {isCheckedIn
+              ? `ĐANG LÀM • ${SHIFT_LABELS[activeRecord.shiftType].toUpperCase()}`
+              : 'CHƯA CHECK IN'}
+          </Text>
         </View>
 
         {/* Digital Clock */}
         <View style={styles.clockContainer}>
           <View style={styles.timeWrapper}>
-            <Text style={styles.timeText}>{format(currentTime, 'HH:mm')}</Text>
-            <Text style={styles.secondsText}>:{format(currentTime, 'ss')}</Text>
+            <Text style={styles.timeText}>
+              {format(currentTime, 'HH:mm')}
+            </Text>
+            <Text style={styles.secondsText}>
+              :{format(currentTime, 'ss')}
+            </Text>
           </View>
-          <Text style={styles.dateText}>{format(currentTime, 'EEEE, MMM dd, yyyy').toUpperCase()}</Text>
+          <Text style={styles.dateText}>
+            {format(
+              currentTime,
+              'EEEE, dd/MM/yyyy',
+              { locale: vi }
+            ).toUpperCase()}
+          </Text>
         </View>
 
-        {/* Check In Button */}
+        {/* Check In / Check Out Button */}
         <View style={styles.checkInContainer}>
-          <View style={styles.checkInOuterRing} />
-          <View style={styles.checkInInnerRing} />
-          <TouchableOpacity style={styles.checkInBtn} activeOpacity={0.8}>
-            <Ionicons name="log-in" size={48} color={theme.colors.onPrimary} style={{ marginBottom: 8 }} />
-            <Text style={styles.checkInBtnText}>Check In</Text>
-            <Text style={styles.checkInBtnSub}>HQ OFFICE • FLOOR 4</Text>
+          <View
+            style={styles.checkInOuterRing}
+          />
+          <View
+            style={styles.checkInInnerRing}
+          />
+          <TouchableOpacity
+            style={[
+              styles.checkInBtn,
+              isCheckedIn && {
+                backgroundColor:
+                  theme.colors.error,
+              },
+            ]}
+            activeOpacity={0.8}
+            onPress={handleMainAction}
+          >
+            <Ionicons
+              name={
+                isCheckedIn
+                  ? 'log-out'
+                  : 'log-in'
+              }
+              size={48}
+              color={theme.colors.onPrimary}
+              style={{ marginBottom: 8 }}
+            />
+            <Text
+              style={styles.checkInBtnText}
+            >
+              {isCheckedIn
+                ? 'Check Out'
+                : 'Check In'}
+            </Text>
+            {isCheckedIn &&
+              activeRecord.checkInTime && (
+                <Text
+                  style={
+                    styles.checkInBtnSub
+                  }
+                >
+                  VÀO LÚC{' '}
+                  {format(
+                    new Date(
+                      activeRecord.checkInTime
+                    ),
+                    'HH:mm'
+                  )}
+                </Text>
+              )}
           </TouchableOpacity>
         </View>
 
-        {/* Location Bento Card */}
-        <View style={styles.locationCard}>
-          <View style={styles.locationHeader}>
-            <View style={styles.locationHeaderLeft}>
-              <Ionicons name="location" size={20} color={theme.colors.primary} />
-              <Text style={styles.locationTitle}>Work Location</Text>
-            </View>
-            <View style={styles.inZoneBadge}>
-              <Text style={styles.inZoneText}>In Zone</Text>
-            </View>
+        {/* Thống kê nhanh hôm nay */}
+        <View style={styles.todayStats}>
+          <View style={styles.todayStatItem}>
+            <Text
+              style={styles.todayStatLabel}
+            >
+              Tổng ca tháng này
+            </Text>
+            <Text
+              style={styles.todayStatValue}
+            >
+              {
+                attendance.filter(
+                  (r) =>
+                    r.date.startsWith(
+                      format(
+                        new Date(),
+                        'yyyy-MM'
+                      )
+                    )
+                ).length
+              }
+            </Text>
           </View>
-          
-          <View style={styles.mapContainer}>
-            <Image 
-              source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBFM6pz6hglfkjGIOOs8NhlWByxsk82HAfMW67WUk7k_wXkJDXplff3Dh5aVbwTz1tnxbncfxTMEsolwUn5w6tRLHW-4EKe8Gm9w56MWy6p86SzPv5E67RvTzH8_zIIX_rrW_1BAIHD2JbYt8i8npVZcxK0jIm-Nd5JuB-tma_NGF_MEH428ZuOokEqA6ro4O2bIbL_mxeM37MUZKHPlnJS5Fvf-z0UE6oZMpwAIuCks4dnGS_6dLwYM1OglHpu9Gpcc2tqQSZIAxRv' }}
-              style={styles.mapImage}
-            />
-            <View style={styles.mapOverlay} />
-            <View style={styles.mapPinContainer}>
-              <View style={[styles.mapPin, { position: 'absolute', opacity: 0.3, transform: [{ scale: 2 }] }]} />
-              <View style={styles.mapPin} />
-            </View>
-          </View>
-
-          <View style={styles.locationFooter}>
-            <View>
-              <Text style={styles.addressLine1}>101 California St.</Text>
-              <Text style={styles.addressLine2}>San Francisco, CA 94111</Text>
-            </View>
-            <TouchableOpacity>
-              <Text style={styles.viewMapText}>View Map</Text>
-            </TouchableOpacity>
+          <View style={styles.todayStatItem}>
+            <Text
+              style={styles.todayStatLabel}
+            >
+              Giờ làm hôm nay
+            </Text>
+            <Text
+              style={styles.todayStatValue}
+            >
+              {attendance
+                .filter(
+                  (r) => r.date === todayStr
+                )
+                .reduce(
+                  (sum, r) =>
+                    sum + r.actualHours,
+                  0
+                )
+                .toFixed(1)}
+              h
+            </Text>
           </View>
         </View>
       </View>
+
+      {/* Date Picker Modal */}
+      <Modal
+        visible={showDatePicker}
+        transparent
+        animationType="slide"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text
+                style={styles.modalTitle}
+              >
+                Chọn ngày Check In
+              </Text>
+              <TouchableOpacity
+                onPress={() =>
+                  setShowDatePicker(false)
+                }
+              >
+                <Ionicons
+                  name="close"
+                  size={24}
+                  color={
+                    theme.colors.onSurface
+                  }
+                />
+              </TouchableOpacity>
+            </View>
+            <Text
+              style={styles.modalSubtitle}
+            >
+              Chỉ cho phép chọn ngày hôm nay
+              hoặc trước đó
+            </Text>
+            <ScrollView
+              style={styles.dateList}
+            >
+              {dateOptions.map((date) => {
+                const hasRecord =
+                  hasRecordForDate(date);
+                return (
+                  <TouchableOpacity
+                    key={date}
+                    style={[
+                      styles.dateItem,
+                      hasRecord &&
+                        styles.dateItemDisabled,
+                    ]}
+                    onPress={() =>
+                      handleDateSelect(date)
+                    }
+                    disabled={hasRecord}
+                  >
+                    <View
+                      style={
+                        styles.dateItemLeft
+                      }
+                    >
+                      <Text
+                        style={[
+                          styles.dateItemDay,
+                          hasRecord && {
+                            color:
+                              theme.colors
+                                .outline,
+                          },
+                        ]}
+                      >
+                        {format(
+                          parseISO(date),
+                          'dd'
+                        )}
+                      </Text>
+                      <View>
+                        <Text
+                          style={
+                            styles.dateItemWeekday
+                          }
+                        >
+                          {format(
+                            parseISO(date),
+                            'EEEE',
+                            { locale: vi }
+                          )}
+                        </Text>
+                        <Text
+                          style={
+                            styles.dateItemFull
+                          }
+                        >
+                          {format(
+                            parseISO(date),
+                            'dd/MM/yyyy'
+                          )}
+                        </Text>
+                      </View>
+                    </View>
+                    {hasRecord ? (
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={20}
+                        color={
+                          theme.colors
+                            .tertiary
+                        }
+                      />
+                    ) : (
+                      <Ionicons
+                        name="add-circle-outline"
+                        size={20}
+                        color={
+                          theme.colors
+                            .primary
+                        }
+                      />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Shift Type Picker Modal */}
+      <Modal
+        visible={showShiftPicker}
+        transparent
+        animationType="fade"
+      >
+        <View style={styles.modalOverlay}>
+          <View
+            style={[
+              styles.modalContent,
+              { maxHeight: 350 },
+            ]}
+          >
+            <Text style={styles.modalTitle}>
+              Chọn loại ca
+            </Text>
+            <Text
+              style={styles.modalSubtitle}
+            >
+              Ngày {selectedDate}
+            </Text>
+            {(
+              Object.keys(
+                SHIFT_LABELS
+              ) as ShiftType[]
+            ).map((shift) => (
+              <TouchableOpacity
+                key={shift}
+                style={styles.shiftItem}
+                onPress={() =>
+                  handleShiftSelect(shift)
+                }
+              >
+                <Text
+                  style={styles.shiftLabel}
+                >
+                  {SHIFT_LABELS[shift]}
+                </Text>
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={
+                    theme.colors.outline
+                  }
+                />
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity
+              style={styles.cancelBtn}
+              onPress={() =>
+                setShowShiftPicker(false)
+              }
+            >
+              <Text
+                style={styles.cancelBtnText}
+              >
+                Hủy
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -111,7 +531,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surface,
   },
   contentContainer: {
-    paddingBottom: 120, // space for bottom tab
+    paddingBottom: 120,
   },
   header: {
     flexDirection: 'row',
@@ -120,23 +540,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    backgroundColor:
+      'rgba(255, 255, 255, 0.8)',
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-  },
-  avatarContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    overflow: 'hidden',
-    backgroundColor: theme.colors.surfaceContainerHighest,
-  },
-  avatar: {
-    width: '100%',
-    height: '100%',
   },
   welcomeText: {
     fontSize: 10,
@@ -145,14 +555,12 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   nameText: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: 'bold',
     fontFamily: theme.typography.headline,
     color: theme.colors.primaryContainer,
   },
-  notificationBtn: {
-    padding: 8,
-  },
+  notificationBtn: { padding: 8 },
   mainCanvas: {
     alignItems: 'center',
     paddingHorizontal: 24,
@@ -162,7 +570,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: theme.colors.surfaceContainerLow,
+    backgroundColor:
+      theme.colors.surfaceContainerLow,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 99,
@@ -178,13 +587,11 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: theme.colors.tertiary,
   },
   statusText: {
     fontSize: 12,
     fontWeight: '600',
     fontFamily: theme.typography.label,
-    color: theme.colors.tertiary,
     letterSpacing: 0.5,
   },
   clockContainer: {
@@ -229,7 +636,8 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 125,
     borderWidth: 1,
-    borderColor: 'rgba(0, 91, 191, 0.1)',
+    borderColor:
+      'rgba(0, 91, 191, 0.1)',
   },
   checkInInnerRing: {
     position: 'absolute',
@@ -237,7 +645,8 @@ const styles = StyleSheet.create({
     height: '85%',
     borderRadius: 125,
     borderWidth: 1,
-    borderColor: 'rgba(0, 91, 191, 0.05)',
+    borderColor:
+      'rgba(0, 91, 191, 0.05)',
   },
   checkInBtn: {
     width: '75%',
@@ -266,103 +675,119 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginTop: 4,
   },
-  locationCard: {
+  todayStats: {
+    flexDirection: 'row',
+    gap: 16,
     width: '100%',
-    backgroundColor: theme.colors.surfaceContainerLowest,
-    borderRadius: 16,
-    padding: 20,
-    elevation: 2,
-    shadowColor: '#191c23',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 20,
   },
-  locationHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  todayStatItem: {
+    flex: 1,
+    backgroundColor:
+      theme.colors.surfaceContainerLowest,
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
     alignItems: 'center',
-    marginBottom: 16,
   },
-  locationHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  todayStatLabel: {
+    fontSize: 12,
+    color: theme.colors.outline,
+    marginBottom: 4,
   },
-  locationTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    fontFamily: theme.typography.headline,
+  todayStatValue: {
+    fontSize: 24,
+    fontWeight: '800',
     color: theme.colors.onSurface,
   },
-  inZoneBadge: {
-    backgroundColor: 'rgba(55, 134, 58, 0.1)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+
+  // Modals
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
   },
-  inZoneText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    fontFamily: theme.typography.label,
-    color: theme.colors.tertiaryContainer,
+  modalContent: {
+    backgroundColor: theme.colors.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    maxHeight: '70%',
   },
-  mapContainer: {
-    width: '100%',
-    height: 120,
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: theme.colors.surfaceContainerHighest,
-  },
-  mapImage: {
-    width: '100%',
-    height: '100%',
-    opacity: 0.8,
-  },
-  mapOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    height: '50%',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  mapPinContainer: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -8 }, { translateY: -8 }],
-    width: 16,
-    height: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  mapPin: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: theme.colors.primary,
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  locationFooter: {
+  modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginTop: 12,
+    alignItems: 'center',
   },
-  addressLine1: {
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: theme.colors.onSurface,
+    marginBottom: 4,
+  },
+  modalSubtitle: {
+    fontSize: 13,
+    color: theme.colors.outline,
+    marginBottom: 16,
+  },
+  dateList: { maxHeight: 400 },
+  dateItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor:
+      'rgba(0,0,0,0.05)',
+  },
+  dateItemDisabled: { opacity: 0.5 },
+  dateItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  dateItemDay: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: theme.colors.onSurface,
+    width: 36,
+    textAlign: 'center',
+  },
+  dateItemWeekday: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.onSurface,
+  },
+  dateItemFull: {
     fontSize: 12,
-    fontWeight: '500',
+    color: theme.colors.outline,
+  },
+  shiftItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor:
+      'rgba(0,0,0,0.05)',
+  },
+  shiftLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.onSurface,
+  },
+  cancelBtn: {
+    marginTop: 16,
+    alignItems: 'center',
+    paddingVertical: 14,
+    backgroundColor:
+      theme.colors.surfaceContainerHigh,
+    borderRadius: 12,
+  },
+  cancelBtnText: {
+    fontSize: 16,
+    fontWeight: '600',
     color: theme.colors.onSurfaceVariant,
   },
-  addressLine2: {
-    fontSize: 10,
-    color: theme.colors.outline,
-    marginTop: 2,
-  },
-  viewMapText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    fontFamily: theme.typography.headline,
-    color: theme.colors.primary,
-  },
 });
+
