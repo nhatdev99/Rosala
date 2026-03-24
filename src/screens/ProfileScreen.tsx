@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../utils/theme';
@@ -16,8 +15,10 @@ import {
   parseISO,
 } from 'date-fns';
 import { useSalaryStore } from '../store/useSalaryStore';
+import { useNavigation } from '@react-navigation/native';
 
 export default function ProfileScreen() {
+  const navigation = useNavigation<any>();
   const attendance = useSalaryStore(
     (s) => s.attendance
   );
@@ -160,11 +161,58 @@ export default function ProfileScreen() {
 
         {/* Menu Sections */}
         <View style={styles.menuSection}>
+          <Text style={styles.sectionTitle}>Cài đặt lương</Text>
+          <View style={styles.menuCard}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() =>
+                navigation.navigate(
+                  'SalaryConfig'
+                )
+              }
+            >
+              <View
+                style={
+                  styles.menuItemLeft
+                }
+              >
+                <View
+                  style={
+                    styles.menuIconContainer
+                  }
+                >
+                  <Ionicons
+                    name="calculator-outline"
+                    size={20}
+                    color={
+                      theme.colors
+                        .onSurfaceVariant
+                    }
+                  />
+                </View>
+                <Text
+                  style={
+                    styles.menuTitle
+                  }
+                >
+                  Cài đặt hệ số lương
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={
+                  theme.colors.outline
+                }
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.menuSection}>
           <Text style={styles.sectionTitle}>Tài khoản</Text>
           <View style={styles.menuCard}>
             <MenuItem icon="person-outline" title="Thông tin cá nhân" />
-            <View style={styles.divider} />
-            <MenuItem icon="shield-checkmark-outline" title="Bảo mật & Mật khẩu" />
             <View style={styles.divider} />
             <MenuItem icon="notifications-outline" title="Cài đặt thông báo" />
           </View>
