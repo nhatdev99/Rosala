@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../utils/theme';
+import { useAppTheme } from '../hooks/useAppTheme';
 import {
   format,
   subDays,
@@ -16,11 +16,18 @@ import {
 } from 'date-fns';
 import { useSalaryStore } from '../store/useSalaryStore';
 import { useNavigation } from '@react-navigation/native';
+import { useProfileStore } from '../store/useProfileStore';
 
 export default function ProfileScreen() {
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   const navigation = useNavigation<any>();
   const attendance = useSalaryStore(
     (s) => s.attendance
+  );
+  const profile = useProfileStore(
+    (s) => s.profile
   );
 
   // Tính giờ làm 7 ngày gần nhất
@@ -87,10 +94,10 @@ export default function ProfileScreen() {
         </View>
         
         <Text style={styles.userName}>
-          Người dùng
+          {profile.fullName || 'Người dùng'}
         </Text>
         <Text style={styles.userRole}>
-          Nhân viên
+          {profile.department || 'Nhân viên'}
         </Text>
       </View>
 
@@ -206,24 +213,56 @@ export default function ProfileScreen() {
                 }
               />
             </TouchableOpacity>
+            <View style={styles.divider} />
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() =>
+                navigation.navigate(
+                  'ThemeSettings'
+                )
+              }
+            >
+              <View style={styles.menuItemLeft}>
+                <View style={styles.menuIconContainer}>
+                  <Ionicons
+                    name="color-palette-outline"
+                    size={20}
+                    color={
+                      theme.colors
+                        .onSurfaceVariant
+                    }
+                  />
+                </View>
+                <Text style={styles.menuTitle}>
+                  Cài đặt giao diện
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={
+                  theme.colors.outline
+                }
+              />
+            </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.menuSection}>
           <Text style={styles.sectionTitle}>Tài khoản</Text>
           <View style={styles.menuCard}>
-            <MenuItem icon="person-outline" title="Thông tin cá nhân" />
+            <MenuItem icon="person-outline" title="Thông tin cá nhân" theme={theme} styles={styles} onPress={() => navigation.navigate('PersonalInfo')} />
             <View style={styles.divider} />
-            <MenuItem icon="notifications-outline" title="Cài đặt thông báo" />
+            <MenuItem icon="notifications-outline" title="Cài đặt thông báo" theme={theme} styles={styles} />
           </View>
         </View>
 
         <View style={styles.menuSection}>
           <Text style={styles.sectionTitle}>Công ty</Text>
           <View style={styles.menuCard}>
-            <MenuItem icon="document-text-outline" title="Chính sách & Quy định" />
+            <MenuItem icon="document-text-outline" title="Chính sách & Quy định" theme={theme} styles={styles} onPress={() => navigation.navigate('Policy')} />
             <View style={styles.divider} />
-            <MenuItem icon="help-circle-outline" title="Hỗ trợ & Góp ý" />
+            <MenuItem icon="help-circle-outline" title="Hỗ trợ & Góp ý" theme={theme} styles={styles} onPress={() => navigation.navigate('SupportFeedback')} />
           </View>
         </View>
 
@@ -239,8 +278,8 @@ export default function ProfileScreen() {
   );
 }
 
-const MenuItem = ({ icon, title }: any) => (
-  <TouchableOpacity style={styles.menuItem}>
+const MenuItem = ({ icon, title, theme, styles, onPress }: any) => (
+  <TouchableOpacity style={styles.menuItem} onPress={onPress}>
     <View style={styles.menuItemLeft}>
       <View style={styles.menuIconContainer}>
         <Ionicons name={icon} size={20} color={theme.colors.onSurfaceVariant} />
@@ -251,7 +290,7 @@ const MenuItem = ({ icon, title }: any) => (
   </TouchableOpacity>
 );
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.surface,

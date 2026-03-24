@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSalaryStore } from '../store/useSalaryStore';
 import { calculateMonthlySalary } from '../utils/salaryCalculator';
 import { format } from 'date-fns';
-import { theme } from '../utils/theme';
+import { useAppTheme } from '../hooks/useAppTheme';
 
 export default function SalaryScreen() {
+  const theme = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   const records = useSalaryStore((state) => state.attendance);
   const config = useSalaryStore((state) => state.config);
   const updateConfig = useSalaryStore((state) => state.updateConfig);
@@ -95,6 +98,7 @@ export default function SalaryScreen() {
 
         <View style={styles.statsContainer}>
           <StatRow 
+            styles={styles}
             icon="calendar-outline" 
             iconColor={theme.colors.primary} 
             label="Tổng số ca làm" 
@@ -102,6 +106,7 @@ export default function SalaryScreen() {
           />
           <View style={styles.divider} />
           <StatRow 
+            styles={styles}
             icon="briefcase-outline" 
             iconColor={theme.colors.secondary} 
             label="Tổng giờ làm cơ bản" 
@@ -109,6 +114,7 @@ export default function SalaryScreen() {
           />
           <View style={styles.divider} />
           <StatRow 
+            styles={styles}
             icon="flash-outline" 
             iconColor={theme.colors.tertiary} 
             label="Tổng giờ tăng ca" 
@@ -121,7 +127,7 @@ export default function SalaryScreen() {
   );
 }
 
-const StatRow = ({ icon, iconColor, label, value }: any) => (
+const StatRow = ({ styles, icon, iconColor, label, value }: any) => (
   <View style={styles.statRow}>
     <View style={styles.statLeft}>
       <View style={[styles.statIconWrapper, { backgroundColor: iconColor + '1A' }]}>
@@ -133,7 +139,7 @@ const StatRow = ({ icon, iconColor, label, value }: any) => (
   </View>
 );
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.surface,
