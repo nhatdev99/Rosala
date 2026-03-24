@@ -48,6 +48,12 @@ export default function AttendanceScreen() {
     useState(
       format(new Date(), 'yyyy-MM-dd')
     );
+  const [showPastHoursPicker, setShowPastHoursPicker] =
+    useState(false);
+  const [pendingShift, setPendingShift] =
+    useState<ShiftType | null>(null);
+  const [pastHoursInput, setPastHoursInput] =
+    useState('12');
 
   const attendance = useSalaryStore(
     (s) => s.attendance
@@ -58,6 +64,12 @@ export default function AttendanceScreen() {
   const checkOut = useSalaryStore(
     (s) => s.checkOut
   );
+  const checkInPastDate = useSalaryStore(
+    (s) => s.checkInPastDate
+  );
+  const lastPastCheckInHours = useSalaryStore(
+    (s) => s.lastPastCheckInHours
+  );
 
   // Đồng hồ thời gian thực
   useEffect(() => {
@@ -66,6 +78,12 @@ export default function AttendanceScreen() {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    setPastHoursInput(
+      String(lastPastCheckInHours)
+    );
+  }, [lastPastCheckInHours]);
 
   // Tìm record hôm nay chưa check-out
   const todayStr = format(
@@ -116,11 +134,74 @@ export default function AttendanceScreen() {
   const handleShiftSelect = (
     shift: ShiftType
   ) => {
+    if (selectedDate < todayStr) {
+      setPendingShift(shift);
+      setShowShiftPicker(false);
+      setPastHoursInput(
+        String(lastPastCheckInHours)
+      );
+      setShowPastHoursPicker(true);
+      return;
+    }
+
     checkIn(selectedDate, shift);
     setShowShiftPicker(false);
     Alert.alert(
       'Check In thành công!',
       `Đã ghi nhận ca "${SHIFT_LABELS[shift]}" cho ngày ${selectedDate}.`
+    );
+  };
+
+  const adjustPastHours = (
+    diff: number
+  ) => {
+    const value = Number(
+      pastHoursInput.replace(',', '.')
+    );
+    const current = Number.isFinite(value)
+      ? value
+      : lastPastCheckInHours;
+    const next = Math.max(
+      0.5,
+      Math.min(
+        24,
+        Math.round((current + diff) * 10) /
+          10
+      )
+    );
+    setPastHoursInput(String(next));
+  };
+
+  const handleConfirmPastCheckIn = () => {
+    if (!pendingShift) return;
+
+    const parsed = Number(
+      pastHoursInput.replace(',', '.')
+    );
+    if (!Number.isFinite(parsed)) {
+      Alert.alert(
+        'Số giờ không hợp lệ',
+        'Vui lòng nhập số giờ dạng số, ví dụ 12 hoặc 12.5.'
+      );
+      return;
+    }
+
+    const safeHours = Math.max(
+      0.5,
+      Math.min(24, parsed)
+    );
+
+    checkInPastDate(
+      selectedDate,
+      pendingShift,
+      safeHours
+    );
+    setShowPastHoursPicker(false);
+    setPendingShift(null);
+
+    Alert.alert(
+      'Check In ngày trước thành công!',
+      `Đã ghi nhận ${safeHours} giờ cho ca "${SHIFT_LABELS[pendingShift]}" ngày ${selectedDate}.`
     );
   };
 
@@ -459,6 +540,92 @@ export default function AttendanceScreen() {
         </View>
       </Modal>
 
+      {/* Past Hours Picker Modal */}
+      <Modal
+        visible={showPastHoursPicker}
+        transparent
+        animationType="fade"
+      >
+        <View style={styles.modalOverlay}>
+          <View
+            style={[
+              styles.modalContent,
+              { maxHeight: 320 },
+            ]}
+          >
+            <Text style={styles.modalTitle}>
+              Check in ngày trước
+            </Text>
+            <Text style={styles.modalSubtitle}>
+              Nhập số giờ làm cho ngày {selectedDate}
+            </Text>
+
+            <View style={styles.hoursInputRow}>
+              <TouchableOpacity
+                style={styles.hoursAdjustBtn}
+                onPress={() =>
+                  adjustPastHours(-0.5)
+                }
+              >
+                <Ionicons
+                  name="remove"
+                  size={20}
+                  color={theme.colors.onSurface}
+                />
+              </TouchableOpacity>
+              <View
+                style={styles.hoursValueBox}
+              >
+                <Text
+                  style={styles.hoursValueText}
+                >
+                  {pastHoursInput}h
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.hoursAdjustBtn}
+                onPress={() =>
+                  adjustPastHours(0.5)
+                }
+              >
+                <Ionicons
+                  name="add"
+                  size={20}
+                  color={theme.colors.onSurface}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.confirmPastBtn}
+              onPress={
+                handleConfirmPastCheckIn
+              }
+            >
+              <Text
+                style={styles.confirmPastBtnText}
+              >
+                Xác nhận check in
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.cancelBtn}
+              onPress={() => {
+                setShowPastHoursPicker(false);
+                setPendingShift(null);
+              }}
+            >
+              <Text
+                style={styles.cancelBtnText}
+              >
+                Hủy
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* Shift Type Picker Modal */}
       <Modal
         visible={showShiftPicker}
@@ -775,6 +942,48 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: theme.colors.onSurface,
+  },
+  hoursInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    marginBottom: 20,
+  },
+  hoursAdjustBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor:
+      theme.colors.surfaceContainerHigh,
+  },
+  hoursValueBox: {
+    minWidth: 120,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor:
+      theme.colors.surfaceContainerLow,
+    alignItems: 'center',
+  },
+  hoursValueText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: theme.colors.onSurface,
+  },
+  confirmPastBtn: {
+    alignItems: 'center',
+    paddingVertical: 14,
+    backgroundColor: theme.colors.primary,
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+  confirmPastBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: theme.colors.onPrimary,
   },
   cancelBtn: {
     marginTop: 16,
