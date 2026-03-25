@@ -1,4 +1,4 @@
-{
+﻿{
   "expo": {
     "name": "Rosala",
     "slug": "Rosala",
@@ -25,6 +25,14 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Cho phep ung dung truy cap thu vien anh de cap nhat avatar"
+        }
+      ]
+    ]
   }
 }

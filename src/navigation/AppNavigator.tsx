@@ -1,14 +1,11 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import {
-  NavigationContainer,
-  DefaultTheme,
-  DarkTheme,
-} from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { User, onAuthStateChanged } from 'firebase/auth';
 
 import AttendanceScreen from '../screens/AttendanceScreen';
 import LogsScreen from '../screens/LogsScreen';
@@ -21,13 +18,21 @@ import SupportFeedbackScreen from '../screens/SupportFeedbackScreen';
 import PersonalInfoScreen from '../screens/PersonalInfoScreen';
 import FlashGuideScreen from '../screens/FlashGuideScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
+import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
+
 import { useAppTheme } from '../hooks/useAppTheme';
 import { useThemeStore } from '../store/useThemeStore';
+import { useProfileStore } from '../store/useProfileStore';
+import { auth } from '../services/firebase';
+import { fetchUserProfile } from '../services/userProfileService';
+import { useAutoFirebaseSync } from '../hooks/useAutoFirebaseSync';
 
 const Tab = createBottomTabNavigator();
 const ProfileStack = createNativeStackNavigator();
 const AttendanceStack = createNativeStackNavigator();
 const RootStack = createNativeStackNavigator();
+const AuthStack = createNativeStackNavigator();
 
 const GUIDE_SEEN_KEY = 'flash-guide-seen-v1';
 
@@ -41,14 +46,11 @@ const AttendanceStackScreen = () => {
         contentStyle: { backgroundColor: theme.colors.surface },
       }}
     >
-      <AttendanceStack.Screen
-        name="AttendanceMain"
-        component={AttendanceScreen}
-      />
+      <AttendanceStack.Screen name="AttendanceMain" component={AttendanceScreen} />
       <AttendanceStack.Screen
         name="Notifications"
         component={NotificationsScreen}
-        options={{ headerShown: true, title: 'Thông báo' }}
+        options={{ headerShown: true, title: 'Thong bao' }}
       />
     </AttendanceStack.Navigator>
   );
@@ -69,22 +71,22 @@ const ProfileStackScreen = () => {
       <ProfileStack.Screen
         name="ThemeSettings"
         component={ThemeSettingsScreen}
-        options={{ headerShown: true, title: 'Giao diện' }}
+        options={{ headerShown: true, title: 'Giao dien' }}
       />
       <ProfileStack.Screen
         name="PersonalInfo"
         component={PersonalInfoScreen}
-        options={{ headerShown: true, title: 'Thông tin cá nhân' }}
+        options={{ headerShown: true, title: 'Thong tin ca nhan' }}
       />
       <ProfileStack.Screen
         name="Policy"
         component={PolicyScreen}
-        options={{ headerShown: true, title: 'Chính sách & Quy định' }}
+        options={{ headerShown: true, title: 'Chinh sach va quy dinh' }}
       />
       <ProfileStack.Screen
         name="SupportFeedback"
         component={SupportFeedbackScreen}
-        options={{ headerShown: true, title: 'Hỗ trợ & Góp ý' }}
+        options={{ headerShown: true, title: 'Ho tro va gop y' }}
       />
     </ProfileStack.Navigator>
   );
@@ -135,11 +137,28 @@ const MainTabs = () => {
         },
       })}
     >
-      <Tab.Screen name="Attendance" component={AttendanceStackScreen} options={{ title: 'Điểm danh' }} />
-      <Tab.Screen name="Logs" component={LogsScreen} options={{ title: 'Lịch sử' }} />
-      <Tab.Screen name="Salary" component={SalaryScreen} options={{ title: 'Bảng lương' }} />
-      <Tab.Screen name="Profile" component={ProfileStackScreen} options={{ title: 'Cá nhân' }} />
+      <Tab.Screen name="Attendance" component={AttendanceStackScreen} options={{ title: 'Diem danh' }} />
+      <Tab.Screen name="Logs" component={LogsScreen} options={{ title: 'Lich su' }} />
+      <Tab.Screen name="Salary" component={SalaryScreen} options={{ title: 'Bang luong' }} />
+      <Tab.Screen name="Profile" component={ProfileStackScreen} options={{ title: 'Ca nhan' }} />
     </Tab.Navigator>
+  );
+};
+
+const AuthStackScreen = () => {
+  const theme = useAppTheme();
+
+  return (
+    <AuthStack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: theme.colors.surface },
+        headerTintColor: theme.colors.onSurface,
+        contentStyle: { backgroundColor: theme.colors.surface },
+      }}
+    >
+      <AuthStack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+      <AuthStack.Screen name="Register" component={RegisterScreen} options={{ title: 'Dang ky' }} />
+    </AuthStack.Navigator>
   );
 };
 
@@ -147,13 +166,52 @@ export default function AppNavigator() {
   const theme = useAppTheme();
   const mode = useThemeStore((s) => s.mode);
   const systemScheme = useColorScheme();
+  const updateProfileStore = useProfileStore((s) => s.updateProfile);
+
   const [guideSeen, setGuideSeen] = useState<boolean | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+
+  useAutoFirebaseSync(user?.uid ?? null);
 
   useEffect(() => {
     AsyncStorage.getItem(GUIDE_SEEN_KEY).then((v) => {
       setGuideSeen(v === '1');
     });
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setAuthReady(true);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    const hydrate = async () => {
+      if (!user) {
+        return;
+      }
+
+      try {
+        const remoteProfile = await fetchUserProfile(user.uid);
+        if (remoteProfile) {
+          updateProfileStore(remoteProfile);
+        } else {
+          updateProfileStore({
+            fullName: user.displayName || 'Nguoi dung',
+            email: user.email || '',
+          });
+        }
+      } catch (error) {
+        console.warn('Hydrate profile failed', error);
+      }
+    };
+
+    void hydrate();
+  }, [user, updateProfileStore]);
 
   const markGuideSeen = async () => {
     await AsyncStorage.setItem(GUIDE_SEEN_KEY, '1');
@@ -163,7 +221,9 @@ export default function AppNavigator() {
   const resolvedDark = mode === 'system' ? systemScheme === 'dark' : mode === 'dark';
   const navTheme = resolvedDark ? DarkTheme : DefaultTheme;
 
-  if (guideSeen === null) return null;
+  if (guideSeen === null || !authReady) {
+    return null;
+  }
 
   return (
     <NavigationContainer
@@ -180,12 +240,18 @@ export default function AppNavigator() {
       }}
     >
       <RootStack.Navigator screenOptions={{ headerShown: false }}>
-        {!guideSeen && (
-          <RootStack.Screen name="FlashGuide">
-            {() => <FlashGuideScreen onDone={markGuideSeen} />}
-          </RootStack.Screen>
+        {!user ? (
+          <RootStack.Screen name="Auth" component={AuthStackScreen} />
+        ) : (
+          <>
+            {!guideSeen && (
+              <RootStack.Screen name="FlashGuide">
+                {() => <FlashGuideScreen onDone={markGuideSeen} />}
+              </RootStack.Screen>
+            )}
+            <RootStack.Screen name="MainTabs" component={MainTabs} />
+          </>
         )}
-        <RootStack.Screen name="MainTabs" component={MainTabs} />
       </RootStack.Navigator>
     </NavigationContainer>
   );

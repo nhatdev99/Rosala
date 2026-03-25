@@ -1,4 +1,4 @@
-import {
+﻿import {
   SalaryConfig,
   AttendanceRecord,
   calculateDailySalary,
@@ -11,6 +11,7 @@ describe('salaryCalculator', () => {
     night: { baseHours: 8, baseRate: 120, overtimeHours: 2, overtimeRate: 180 },
     offDay: { baseHours: 8, baseRate: 200, overtimeHours: 2, overtimeRate: 250 },
     offNight: { baseHours: 8, baseRate: 250, overtimeHours: 2, overtimeRate: 300 },
+    taxRate: 0,
   };
 
   test('calculateDailySalary - Day shift', () => {
@@ -32,7 +33,7 @@ describe('salaryCalculator', () => {
     const records: AttendanceRecord[] = [
       { id: '1', date: '2023-10-01', shiftType: 'day', actualHours: 8, overtimeHours: 0 },
       { id: '2', date: '2023-10-15', shiftType: 'night', actualHours: 8, overtimeHours: 1 },
-      { id: '3', date: '2023-11-01', shiftType: 'day', actualHours: 8, overtimeHours: 0 }, // Khác tháng
+      { id: '3', date: '2023-11-01', shiftType: 'day', actualHours: 8, overtimeHours: 0 }, // KhÃ¡c thÃ¡ng
     ];
 
     const result = calculateMonthlySalary(records, mockConfig, '2023-10');
