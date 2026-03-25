@@ -13,6 +13,7 @@ import { format, isAfter, parseISO, subDays } from 'date-fns';
 import { useNavigation } from '@react-navigation/native';
 import { signOut } from 'firebase/auth';
 import { auth } from '../services/firebase';
+import { clearAuthSession } from '../services/authSession';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { useSalaryStore } from '../store/useSalaryStore';
 import { useProfileStore } from '../store/useProfileStore';
@@ -41,6 +42,7 @@ export default function ProfileScreen() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
+      await clearAuthSession();
     } catch (error: any) {
       Alert.alert('Thong bao', error?.message || 'Khong the dang xuat.');
     }
@@ -148,6 +150,14 @@ export default function ProfileScreen() {
               theme={theme}
               styles={styles}
               onPress={() => navigation.navigate('Policy')}
+            />
+            <View style={styles.divider} />
+            <MenuItem
+              icon="book-outline"
+              title="Huong dan su dung"
+              theme={theme}
+              styles={styles}
+              onPress={() => navigation.navigate('UserGuide')}
             />
             <View style={styles.divider} />
             <MenuItem
