@@ -67,6 +67,18 @@ const FIELD_LABELS: Record<
     label: 'Đơn giá tăng ca',
     suffix: '₫/h',
   },
+  extraHours: {
+    label: 'Giờ phụ',
+    suffix: 'h',
+  },
+  extraRate: {
+    label: 'Đơn giá giờ phụ',
+    suffix: '₫/h',
+  },
+  allowance: {
+    label: 'Phụ cấp',
+    suffix: '₫/ca',
+  },
 };
 
 const FIELDS = [
@@ -75,6 +87,18 @@ const FIELDS = [
   'baseRate',
   'overtimeRate',
 ] as const;
+
+const parseLocaleNumber = (
+  value?: string
+) => {
+  if (!value) return 0;
+  const normalized = value
+    .replace(/\s/g, '')
+    .replace(',', '.');
+  const parsed =
+    Number.parseFloat(normalized);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
 
 export default function SalaryConfigScreen({
   navigation,
@@ -105,6 +129,15 @@ export default function SalaryConfigScreen({
         currentShift.baseRate.toString(),
       overtimeRate:
         currentShift.overtimeRate.toString(),
+      extraHours: (
+        currentShift.extraHours ?? 0
+      ).toString(),
+      extraRate: (
+        currentShift.extraRate ?? 0
+      ).toString(),
+      allowance: (
+        currentShift.allowance ?? 0
+      ).toString(),
     });
 
   // Khi đổi tab ca
@@ -120,6 +153,15 @@ export default function SalaryConfigScreen({
       baseRate: s.baseRate.toString(),
       overtimeRate:
         s.overtimeRate.toString(),
+      extraHours: (
+        s.extraHours ?? 0
+      ).toString(),
+      extraRate: (
+        s.extraRate ?? 0
+      ).toString(),
+      allowance: (
+        s.allowance ?? 0
+      ).toString(),
     });
   };
 
@@ -138,19 +180,33 @@ export default function SalaryConfigScreen({
   const handleSave = () => {
     const parsed = {
       baseHours:
-        parseFloat(formValues.baseHours) ||
-        0,
+        parseLocaleNumber(
+          formValues.baseHours
+        ),
       overtimeHours:
-        parseFloat(
+        parseLocaleNumber(
           formValues.overtimeHours
-        ) || 0,
+        ),
       baseRate:
-        parseFloat(formValues.baseRate) ||
-        0,
+        parseLocaleNumber(
+          formValues.baseRate
+        ),
       overtimeRate:
-        parseFloat(
+        parseLocaleNumber(
           formValues.overtimeRate
-        ) || 0,
+        ),
+      extraHours:
+        parseLocaleNumber(
+          formValues.extraHours
+        ),
+      extraRate:
+        parseLocaleNumber(
+          formValues.extraRate
+        ),
+      allowance:
+        parseLocaleNumber(
+          formValues.allowance
+        ),
     };
 
     // Validation
@@ -260,7 +316,17 @@ export default function SalaryConfigScreen({
 
       {/* Form Fields */}
       <View style={styles.formContainer}>
-        {FIELDS.map((field) => {
+        {[
+          ...FIELDS,
+          ...(activeShift === 'night' ||
+          activeShift === 'offNight'
+            ? ([
+                'extraHours',
+                'extraRate',
+                'allowance',
+              ] as const)
+            : []),
+        ].map((field) => {
           const {
             label,
             suffix,
@@ -322,13 +388,13 @@ export default function SalaryConfigScreen({
                 styles.previewValue
               }
             >
-              {(
-                (parseFloat(
-                  formValues.baseHours
-                ) || 0) *
-                (parseFloat(
+                {(
+                  parseLocaleNumber(
+                    formValues.baseHours
+                  ) *
+                parseLocaleNumber(
                   formValues.baseRate
-                ) || 0)
+                )
               ).toLocaleString('vi-VN')}{' '}
               ₫
             </Text>
@@ -346,17 +412,68 @@ export default function SalaryConfigScreen({
                 styles.previewValue
               }
             >
-              {(
-                (parseFloat(
+                {(
+                parseLocaleNumber(
                   formValues.overtimeHours
-                ) || 0) *
-                (parseFloat(
+                ) *
+                parseLocaleNumber(
                   formValues.overtimeRate
-                ) || 0)
+                )
               ).toLocaleString('vi-VN')}{' '}
               ₫
             </Text>
           </View>
+          {(activeShift === 'night' ||
+            activeShift ===
+              'offNight') && (
+            <View style={styles.previewRow}>
+              <Text
+                style={
+                  styles.previewLabel
+                }
+              >
+                Lương giờ phụ
+              </Text>
+              <Text
+                style={
+                  styles.previewValue
+                }
+              >
+                {(
+                  parseLocaleNumber(
+                    formValues.extraHours
+                  ) *
+                  parseLocaleNumber(
+                    formValues.extraRate
+                  )
+                ).toLocaleString('vi-VN')}{' '}
+                ₫
+              </Text>
+            </View>
+          )}
+          {(activeShift === 'night' ||
+            activeShift ===
+              'offNight') && (
+            <View style={styles.previewRow}>
+              <Text
+                style={
+                  styles.previewLabel
+                }
+              >
+                Phụ cấp
+              </Text>
+              <Text
+                style={
+                  styles.previewValue
+                }
+              >
+                {parseLocaleNumber(
+                  formValues.allowance
+                ).toLocaleString('vi-VN')}{' '}
+                ₫
+              </Text>
+            </View>
+          )}
           <View style={styles.divider} />
           <View style={styles.previewRow}>
             <Text
@@ -371,19 +488,30 @@ export default function SalaryConfigScreen({
                 styles.previewValueBold
               }
             >
-              {(
-                (parseFloat(
+                {(
+                parseLocaleNumber(
                   formValues.baseHours
-                ) || 0) *
-                  (parseFloat(
+                ) *
+                  parseLocaleNumber(
                     formValues.baseRate
-                  ) || 0) +
-                (parseFloat(
+                  ) +
+                parseLocaleNumber(
                   formValues.overtimeHours
-                ) || 0) *
-                  (parseFloat(
+                ) *
+                  parseLocaleNumber(
                     formValues.overtimeRate
-                  ) || 0)
+                  )
+                +
+                parseLocaleNumber(
+                  formValues.extraHours
+                ) *
+                  parseLocaleNumber(
+                    formValues.extraRate
+                  )
+                +
+                parseLocaleNumber(
+                  formValues.allowance
+                )
               ).toLocaleString('vi-VN')}{' '}
               ₫
             </Text>
