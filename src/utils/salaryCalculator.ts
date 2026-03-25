@@ -5,6 +5,8 @@ export interface ShiftConfig {
   overtimeHours: number;
   baseRate: number;
   overtimeRate: number;
+  extraHours?: number;
+  extraRate?: number;
 }
 
 export interface SalaryConfig {
@@ -31,6 +33,7 @@ export interface AttendanceRecord {
 export interface DailySalary {
   base: number;
   ot: number;
+  extra: number;
   total: number;
 }
 
@@ -38,6 +41,7 @@ export interface MonthlySalary {
   month: string; // Định dạng YYYY-MM
   totalBaseSalary: number;
   totalOvertimeSalary: number;
+  totalExtraSalary: number;
   totalSalary: number; // Trước thuế (Gross)
   taxAmount: number; // Tiền thuế
   netSalary: number; // Thực nhận sau thuế
@@ -58,11 +62,15 @@ export const calculateDailySalary = (
   // Dựa trên số giờ làm thực tế và config của loại ca đó
   const base = record.actualHours * shiftConfig.baseRate;
   const ot = record.overtimeHours * shiftConfig.overtimeRate;
+  const extra =
+    (shiftConfig.extraHours || 0) *
+    (shiftConfig.extraRate || 0);
   
   return {
     base,
     ot,
-    total: base + ot,
+    extra,
+    total: base + ot + extra,
   };
 };
 
@@ -80,6 +88,7 @@ export const calculateMonthlySalary = (
   
   let totalBaseSalary = 0;
   let totalOvertimeSalary = 0;
+  let totalExtraSalary = 0;
   let totalHours = 0;
   let totalOvertimeHours = 0;
   
@@ -87,11 +96,15 @@ export const calculateMonthlySalary = (
     const daily = calculateDailySalary(record, config);
     totalBaseSalary += daily.base;
     totalOvertimeSalary += daily.ot;
+    totalExtraSalary += daily.extra;
     totalHours += record.actualHours;
     totalOvertimeHours += record.overtimeHours;
   });
   
-  const totalSalary = totalBaseSalary + totalOvertimeSalary;
+  const totalSalary =
+    totalBaseSalary +
+    totalOvertimeSalary +
+    totalExtraSalary;
   const taxRate = config.taxRate || 0;
   const taxAmount = (totalSalary * taxRate) / 100;
   const netSalary = totalSalary - taxAmount;
@@ -100,6 +113,7 @@ export const calculateMonthlySalary = (
     month: targetMonth,
     totalBaseSalary,
     totalOvertimeSalary,
+    totalExtraSalary,
     totalSalary,
     taxAmount,
     netSalary,

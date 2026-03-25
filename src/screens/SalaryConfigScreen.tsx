@@ -67,6 +67,14 @@ const FIELD_LABELS: Record<
     label: 'Đơn giá tăng ca',
     suffix: '₫/h',
   },
+  extraHours: {
+    label: 'Giờ phụ',
+    suffix: 'h',
+  },
+  extraRate: {
+    label: 'Đơn giá giờ phụ',
+    suffix: '₫/h',
+  },
 };
 
 const FIELDS = [
@@ -105,6 +113,12 @@ export default function SalaryConfigScreen({
         currentShift.baseRate.toString(),
       overtimeRate:
         currentShift.overtimeRate.toString(),
+      extraHours: (
+        currentShift.extraHours ?? 0
+      ).toString(),
+      extraRate: (
+        currentShift.extraRate ?? 0
+      ).toString(),
     });
 
   // Khi đổi tab ca
@@ -120,6 +134,12 @@ export default function SalaryConfigScreen({
       baseRate: s.baseRate.toString(),
       overtimeRate:
         s.overtimeRate.toString(),
+      extraHours: (
+        s.extraHours ?? 0
+      ).toString(),
+      extraRate: (
+        s.extraRate ?? 0
+      ).toString(),
     });
   };
 
@@ -150,6 +170,14 @@ export default function SalaryConfigScreen({
       overtimeRate:
         parseFloat(
           formValues.overtimeRate
+        ) || 0,
+      extraHours:
+        parseFloat(
+          formValues.extraHours
+        ) || 0,
+      extraRate:
+        parseFloat(
+          formValues.extraRate
         ) || 0,
     };
 
@@ -260,7 +288,16 @@ export default function SalaryConfigScreen({
 
       {/* Form Fields */}
       <View style={styles.formContainer}>
-        {FIELDS.map((field) => {
+        {[
+          ...FIELDS,
+          ...(activeShift === 'night' ||
+          activeShift === 'offNight'
+            ? ([
+                'extraHours',
+                'extraRate',
+              ] as const)
+            : []),
+        ].map((field) => {
           const {
             label,
             suffix,
@@ -357,6 +394,34 @@ export default function SalaryConfigScreen({
               ₫
             </Text>
           </View>
+          {(activeShift === 'night' ||
+            activeShift ===
+              'offNight') && (
+            <View style={styles.previewRow}>
+              <Text
+                style={
+                  styles.previewLabel
+                }
+              >
+                Lương giờ phụ
+              </Text>
+              <Text
+                style={
+                  styles.previewValue
+                }
+              >
+                {(
+                  (parseFloat(
+                    formValues.extraHours
+                  ) || 0) *
+                  (parseFloat(
+                    formValues.extraRate
+                  ) || 0)
+                ).toLocaleString('vi-VN')}{' '}
+                ₫
+              </Text>
+            </View>
+          )}
           <View style={styles.divider} />
           <View style={styles.previewRow}>
             <Text
@@ -383,6 +448,13 @@ export default function SalaryConfigScreen({
                 ) || 0) *
                   (parseFloat(
                     formValues.overtimeRate
+                  ) || 0)
+                +
+                (parseFloat(
+                  formValues.extraHours
+                ) || 0) *
+                  (parseFloat(
+                    formValues.extraRate
                   ) || 0)
               ).toLocaleString('vi-VN')}{' '}
               ₫
