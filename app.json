@@ -4,10 +4,10 @@
     "slug": "Rosala",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/R - 3.png",
+    "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/R - 3.png",
+      "image": "./assets/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
