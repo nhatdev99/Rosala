@@ -58,6 +58,13 @@ function formatInitialForm(shift: any) {
   };
 }
 
+function parseLocaleNumber(value: string) {
+  if (!value) return 0;
+  const normalized = value.replace(/\s+/g, '').replace(/,/g, '.');
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 export default function SalaryConfigScreen({ navigation }: any) {
   const theme = useAppTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -81,17 +88,17 @@ export default function SalaryConfigScreen({ navigation }: any) {
 
   const parsed = {
     calcMode,
-    baseSalary: parseFloat(formValues.baseSalary) || 0,
-    baseHours: parseFloat(formValues.baseHours) || 0,
-    overtimeHours: parseFloat(formValues.overtimeHours) || 0,
-    extraHours: parseFloat(formValues.extraHours) || 0,
-    baseRate: parseFloat(formValues.baseRate) || 0,
-    overtimeRate: parseFloat(formValues.overtimeRate) || 0,
-    extraRate: parseFloat(formValues.extraRate) || 0,
+    baseSalary: parseLocaleNumber(formValues.baseSalary),
+    baseHours: parseLocaleNumber(formValues.baseHours),
+    overtimeHours: parseLocaleNumber(formValues.overtimeHours),
+    extraHours: parseLocaleNumber(formValues.extraHours),
+    baseRate: parseLocaleNumber(formValues.baseRate),
+    overtimeRate: parseLocaleNumber(formValues.overtimeRate),
+    extraRate: parseLocaleNumber(formValues.extraRate),
     workDayMode,
-    customWorkDays: parseFloat(formValues.customWorkDays) || 0,
-    overtimeMultiplier: parseFloat(formValues.overtimeMultiplier) || 0,
-    extraMultiplier: parseFloat(formValues.extraMultiplier) || 0,
+    customWorkDays: parseLocaleNumber(formValues.customWorkDays),
+    overtimeMultiplier: parseLocaleNumber(formValues.overtimeMultiplier),
+    extraMultiplier: parseLocaleNumber(formValues.extraMultiplier),
   };
 
   const previewRates = useMemo(() => resolveShiftRates(parsed as any, new Date().toISOString().slice(0, 10)), [
@@ -134,9 +141,9 @@ export default function SalaryConfigScreen({ navigation }: any) {
 
   const renderedFields = calcMode === 'manual' ? MANUAL_FIELDS : AUTO_FIELDS;
 
-  const baseAmount = (parseFloat(formValues.baseHours) || 0) * previewRates.baseRate;
-  const overtimeAmount = (parseFloat(formValues.overtimeHours) || 0) * (calcMode === 'auto' ? previewRates.overtimeRate : parsed.overtimeRate);
-  const extraAmount = (parseFloat(formValues.extraHours) || 0) * (calcMode === 'auto' ? previewRates.extraRate : parsed.extraRate);
+  const baseAmount = parseLocaleNumber(formValues.baseHours) * previewRates.baseRate;
+  const overtimeAmount = parseLocaleNumber(formValues.overtimeHours) * (calcMode === 'auto' ? previewRates.overtimeRate : parsed.overtimeRate);
+  const extraAmount = parseLocaleNumber(formValues.extraHours) * (calcMode === 'auto' ? previewRates.extraRate : parsed.extraRate);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
