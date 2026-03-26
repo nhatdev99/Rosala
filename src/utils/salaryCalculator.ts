@@ -1,10 +1,21 @@
 import { isSameMonth, parseISO } from 'date-fns';
 
+export type SalaryCalcMode = 'manual' | 'auto';
+export type WorkDayMode = 'month' | 'custom';
+
 export interface ShiftConfig {
   baseHours: number;
   overtimeHours: number;
   baseRate: number;
   overtimeRate: number;
+  extraHours?: number;
+  extraRate?: number;
+  calcMode?: SalaryCalcMode;
+  baseSalary?: number;
+  workDayMode?: WorkDayMode;
+  customWorkDays?: number;
+  overtimeMultiplier?: number;
+  extraMultiplier?: number;
 }
 
 export interface SalaryConfig {
@@ -31,6 +42,7 @@ export interface AttendanceRecord {
 export interface DailySalary {
   base: number;
   ot: number;
+  extra: number;
   total: number;
 }
 
@@ -38,6 +50,7 @@ export interface MonthlySalary {
   month: string; // Định dạng YYYY-MM
   totalBaseSalary: number;
   totalOvertimeSalary: number;
+  totalExtraSalary: number;
   totalSalary: number; // Trước thuế (Gross)
   taxAmount: number; // Tiền thuế
   netSalary: number; // Thực nhận sau thuế
@@ -54,17 +67,80 @@ export const calculateDailySalary = (
   config: SalaryConfig
 ): DailySalary => {
   const shiftConfig = config[record.shiftType];
+  const rates = resolveShiftRates(
+    shiftConfig,
+    record.date
+  );
   
   // Dựa trên số giờ làm thực tế và config của loại ca đó
-  const base = record.actualHours * shiftConfig.baseRate;
-  const ot = record.overtimeHours * shiftConfig.overtimeRate;
+  const base = record.actualHours * rates.baseRate;
+  const ot =
+    record.overtimeHours *
+    rates.overtimeRate;
+  const extra =
+    (shiftConfig.extraHours || 0) *
+    rates.extraRate;
   
   return {
     base,
     ot,
-    total: base + ot,
+    extra,
+    total: base + ot + extra,
   };
 };
+
+export function resolveShiftRates(
+  shiftConfig: ShiftConfig,
+  date: string
+) {
+  const isAuto =
+    shiftConfig.calcMode === 'auto';
+  if (!isAuto) {
+    return {
+      baseRate: shiftConfig.baseRate,
+      overtimeRate:
+        shiftConfig.overtimeRate,
+      extraRate:
+        shiftConfig.extraRate || 0,
+    };
+  }
+
+  const baseSalary =
+    shiftConfig.baseSalary || 0;
+  const baseHours =
+    shiftConfig.baseHours || 0;
+  const monthDays = new Date(
+    parseISO(date).getFullYear(),
+    parseISO(date).getMonth() + 1,
+    0
+  ).getDate();
+
+  const workDays =
+    shiftConfig.workDayMode === 'custom'
+      ? shiftConfig.customWorkDays || 0
+      : monthDays;
+
+  const hourly =
+    workDays > 0 && baseHours > 0
+      ? baseSalary /
+        (workDays * baseHours)
+      : 0;
+
+  const overtimeRate =
+    hourly *
+    (shiftConfig.overtimeMultiplier ||
+      1);
+  const extraRate =
+    hourly *
+    (shiftConfig.extraMultiplier ||
+      1);
+
+  return {
+    baseRate: hourly,
+    overtimeRate,
+    extraRate,
+  };
+}
 
 /**
  * Tính tổng lương và thống kê theo tháng
@@ -80,6 +156,7 @@ export const calculateMonthlySalary = (
   
   let totalBaseSalary = 0;
   let totalOvertimeSalary = 0;
+  let totalExtraSalary = 0;
   let totalHours = 0;
   let totalOvertimeHours = 0;
   
@@ -87,11 +164,15 @@ export const calculateMonthlySalary = (
     const daily = calculateDailySalary(record, config);
     totalBaseSalary += daily.base;
     totalOvertimeSalary += daily.ot;
+    totalExtraSalary += daily.extra;
     totalHours += record.actualHours;
     totalOvertimeHours += record.overtimeHours;
   });
   
-  const totalSalary = totalBaseSalary + totalOvertimeSalary;
+  const totalSalary =
+    totalBaseSalary +
+    totalOvertimeSalary +
+    totalExtraSalary;
   const taxRate = config.taxRate || 0;
   const taxAmount = (totalSalary * taxRate) / 100;
   const netSalary = totalSalary - taxAmount;
@@ -100,6 +181,7 @@ export const calculateMonthlySalary = (
     month: targetMonth,
     totalBaseSalary,
     totalOvertimeSalary,
+    totalExtraSalary,
     totalSalary,
     taxAmount,
     netSalary,

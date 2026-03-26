@@ -3,14 +3,15 @@
   AttendanceRecord,
   calculateDailySalary,
   calculateMonthlySalary,
+  resolveShiftRates,
 } from '../salaryCalculator';
 
 describe('salaryCalculator', () => {
   const mockConfig: SalaryConfig = {
-    day: { baseHours: 8, baseRate: 100, overtimeHours: 2, overtimeRate: 150 },
-    night: { baseHours: 8, baseRate: 120, overtimeHours: 2, overtimeRate: 180 },
-    offDay: { baseHours: 8, baseRate: 200, overtimeHours: 2, overtimeRate: 250 },
-    offNight: { baseHours: 8, baseRate: 250, overtimeHours: 2, overtimeRate: 300 },
+    day: { baseHours: 8, baseRate: 100, overtimeHours: 2, overtimeRate: 150, extraHours: 0, extraRate: 0 },
+    night: { baseHours: 8, baseRate: 120, overtimeHours: 2, overtimeRate: 180, extraHours: 2, extraRate: 56 },
+    offDay: { baseHours: 8, baseRate: 200, overtimeHours: 2, overtimeRate: 250, extraHours: 0, extraRate: 0 },
+    offNight: { baseHours: 8, baseRate: 250, overtimeHours: 2, overtimeRate: 300, extraHours: 2, extraRate: 56 },
     taxRate: 0,
   };
 
@@ -26,6 +27,7 @@ describe('salaryCalculator', () => {
     const result = calculateDailySalary(record, mockConfig);
     expect(result.base).toBe(800); // 8 * 100
     expect(result.ot).toBe(300);   // 2 * 150
+    expect(result.extra).toBe(0);
     expect(result.total).toBe(1100);
   });
 
@@ -43,12 +45,37 @@ describe('salaryCalculator', () => {
     expect(result.totalOvertimeHours).toBe(1);
     
     // Day: 8 * 100 = 800
-    // Night: 8 * 120 = 960, OT: 1 * 180 = 180. Total = 1140
+    // Night: 8 * 120 = 960, OT: 1 * 180 = 180, Extra: 2 * 56 = 112. Total = 1252
     // Total Base = 800 + 960 = 1760
-    // Total OT = 180
-    // Total Salary = 1940
+    // Total OT = 180, Total Extra = 112
+    // Total Salary = 2052
     expect(result.totalBaseSalary).toBe(1760);
     expect(result.totalOvertimeSalary).toBe(180);
-    expect(result.totalSalary).toBe(1940);
+    expect(result.totalExtraSalary).toBe(112);
+    expect(result.totalSalary).toBe(2052);
+  });
+
+  test('resolveShiftRates - Auto mode from base salary', () => {
+    const rates = resolveShiftRates(
+      {
+        calcMode: 'auto',
+        baseSalary: 31200000,
+        workDayMode: 'custom',
+        customWorkDays: 26,
+        baseHours: 8,
+        baseRate: 0,
+        overtimeHours: 2,
+        overtimeRate: 0,
+        extraHours: 1,
+        extraRate: 0,
+        overtimeMultiplier: 1.5,
+        extraMultiplier: 2,
+      },
+      '2026-03-01'
+    );
+
+    expect(Math.round(rates.baseRate)).toBe(150000);
+    expect(Math.round(rates.overtimeRate)).toBe(225000);
+    expect(Math.round(rates.extraRate)).toBe(300000);
   });
 });

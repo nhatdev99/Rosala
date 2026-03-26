@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../hooks/useAppTheme';
@@ -23,6 +24,7 @@ import {
 } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { useSalaryStore } from '../store/useSalaryStore';
+import { ShiftType } from '../utils/salaryCalculator';
 
 const SHIFT_LABELS: Record<string, string> = {
   day: 'Ca ngay',
@@ -40,6 +42,7 @@ export default function LogsScreen() {
   const checkIn = useSalaryStore((s) => s.checkIn);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [showShiftPicker, setShowShiftPicker] = useState(false);
 
   const today = startOfDay(new Date());
 
@@ -100,13 +103,23 @@ export default function LogsScreen() {
       return;
     }
 
-    Alert.alert('Check-in nhanh', 'Chon loai ca', [
-      { text: SHIFT_LABELS.day, onPress: () => checkIn(selectedDate, 'day') },
-      { text: SHIFT_LABELS.night, onPress: () => checkIn(selectedDate, 'night') },
-      { text: SHIFT_LABELS.offDay, onPress: () => checkIn(selectedDate, 'offDay') },
-      { text: SHIFT_LABELS.offNight, onPress: () => checkIn(selectedDate, 'offNight') },
-      { text: 'Huy', style: 'cancel' },
-    ]);
+    setShowShiftPicker(true);
+  };
+
+  const handleShiftSelect = (shift: ShiftType) => {
+    if (!selectedDate) return;
+
+    const isToday = selectedDate === format(today, 'yyyy-MM-dd');
+    checkIn(selectedDate, shift, {
+      autoComplete: !isToday,
+    });
+    setShowShiftPicker(false);
+    Alert.alert(
+      isToday ? 'Check In thanh cong' : 'Da luu cong cho ngay truoc',
+      isToday
+        ? `Da ghi nhan ca "${SHIFT_LABELS[shift]}" cho ngay ${selectedDate}.`
+        : `Da ghi nhan ca "${SHIFT_LABELS[shift]}" cho ngay ${selectedDate}.`
+    );
   };
 
   return (
@@ -316,6 +329,27 @@ export default function LogsScreen() {
           )}
         </View>
       </View>
+      <Modal visible={showShiftPicker} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { maxHeight: 350 }]}>
+            <Text style={styles.modalTitle}>Chon loai ca</Text>
+            <Text style={styles.modalSubtitle}>Ngay {selectedDate}</Text>
+            {(Object.keys(SHIFT_LABELS) as ShiftType[]).map((shift) => (
+              <TouchableOpacity
+                key={shift}
+                style={styles.shiftItem}
+                onPress={() => handleShiftSelect(shift)}
+              >
+                <Text style={styles.shiftLabel}>{SHIFT_LABELS[shift]}</Text>
+                <Ionicons name="chevron-forward" size={20} color={theme.colors.outline} />
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowShiftPicker(false)}>
+              <Text style={styles.cancelBtnText}>Huy</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -606,5 +640,55 @@ const createStyles = (theme: any) =>
       fontWeight: 'bold',
       color: theme.colors.onSurface,
       marginLeft: 8,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.4)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 24,
+    },
+    modalContent: {
+      width: '100%',
+      maxHeight: '80%',
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      padding: 20,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: theme.colors.onSurface,
+      marginBottom: 6,
+    },
+    modalSubtitle: {
+      fontSize: 13,
+      color: theme.colors.outline,
+      marginBottom: 10,
+    },
+    shiftItem: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.outlineVariant,
+    },
+    shiftLabel: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: theme.colors.onSurface,
+    },
+    cancelBtn: {
+      marginTop: 12,
+      backgroundColor: theme.colors.surfaceContainerHigh,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: 42,
+    },
+    cancelBtnText: {
+      fontWeight: '700',
+      color: theme.colors.onSurface,
     },
   });
