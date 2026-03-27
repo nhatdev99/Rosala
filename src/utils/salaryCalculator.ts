@@ -16,6 +16,7 @@ export interface ShiftConfig {
   customWorkDays?: number;
   overtimeMultiplier?: number;
   extraMultiplier?: number;
+  allowance?: number;
 }
 
 export interface SalaryConfig {
@@ -43,6 +44,7 @@ export interface DailySalary {
   base: number;
   ot: number;
   extra: number;
+  allowance: number;
   total: number;
 }
 
@@ -51,6 +53,7 @@ export interface MonthlySalary {
   totalBaseSalary: number;
   totalOvertimeSalary: number;
   totalExtraSalary: number;
+  totalAllowanceSalary: number;
   totalSalary: number; // Trước thuế (Gross)
   taxAmount: number; // Tiền thuế
   netSalary: number; // Thực nhận sau thuế
@@ -80,12 +83,14 @@ export const calculateDailySalary = (
   const extra =
     (shiftConfig.extraHours || 0) *
     rates.extraRate;
+  const allowance = shiftConfig.allowance || 0;
   
   return {
     base,
     ot,
     extra,
-    total: base + ot + extra,
+    allowance,
+    total: base + ot + extra + allowance,
   };
 };
 
@@ -157,6 +162,7 @@ export const calculateMonthlySalary = (
   let totalBaseSalary = 0;
   let totalOvertimeSalary = 0;
   let totalExtraSalary = 0;
+  let totalAllowanceSalary = 0;
   let totalHours = 0;
   let totalOvertimeHours = 0;
   
@@ -165,6 +171,7 @@ export const calculateMonthlySalary = (
     totalBaseSalary += daily.base;
     totalOvertimeSalary += daily.ot;
     totalExtraSalary += daily.extra;
+    totalAllowanceSalary += daily.allowance;
     totalHours += record.actualHours;
     totalOvertimeHours += record.overtimeHours;
   });
@@ -172,7 +179,8 @@ export const calculateMonthlySalary = (
   const totalSalary =
     totalBaseSalary +
     totalOvertimeSalary +
-    totalExtraSalary;
+    totalExtraSalary +
+    totalAllowanceSalary;
   const taxRate = config.taxRate || 0;
   const taxAmount = (totalSalary * taxRate) / 100;
   const netSalary = totalSalary - taxAmount;
@@ -182,6 +190,7 @@ export const calculateMonthlySalary = (
     totalBaseSalary,
     totalOvertimeSalary,
     totalExtraSalary,
+    totalAllowanceSalary,
     totalSalary,
     taxAmount,
     netSalary,

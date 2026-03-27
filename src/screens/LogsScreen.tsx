@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   Modal,
+  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../hooks/useAppTheme';
@@ -25,6 +26,7 @@ import {
 import { vi } from 'date-fns/locale';
 import { useSalaryStore } from '../store/useSalaryStore';
 import { ShiftType } from '../utils/salaryCalculator';
+import { useThemeStore } from '../store/useThemeStore';
 
 const SHIFT_LABELS: Record<string, string> = {
   day: 'Ca ngay',
@@ -33,9 +35,30 @@ const SHIFT_LABELS: Record<string, string> = {
   offNight: 'Nghi (dem)',
 };
 
+const SHIFT_MARKER_COLORS = {
+  light: {
+    day: '#F9A825',
+    offDay: '#D32F2F',
+    night: '#1565C0',
+    offNight: '#6A1B9A',
+  },
+  dark: {
+    day: '#FDD835',
+    offDay: '#EF5350',
+    night: '#64B5F6',
+    offNight: '#BA68C8',
+  },
+} as const;
+
 export default function LogsScreen() {
   const theme = useAppTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const mode = useThemeStore((s) => s.mode);
+  const systemScheme = useColorScheme();
+  const resolvedDark =
+    mode === 'system'
+      ? systemScheme === 'dark'
+      : mode === 'dark';
 
   const attendance = useSalaryStore((s) => s.attendance);
   const deleteRecord = useSalaryStore((s) => s.deleteRecord);
@@ -77,10 +100,10 @@ export default function LogsScreen() {
 
   const startPadding = (getDay(monthStart) + 6) % 7;
 
-  const recordDates = useMemo(() => {
-    const set = new Set<string>();
-    attendance.forEach((r) => set.add(r.date));
-    return set;
+  const recordsByDate = useMemo(() => {
+    const map = new Map<string, ShiftType>();
+    attendance.forEach((r) => map.set(r.date, r.shiftType));
+    return map;
   }, [attendance]);
 
   const monthStr = format(currentMonth, 'yyyy-MM');
@@ -98,7 +121,7 @@ export default function LogsScreen() {
       return;
     }
 
-    if (recordDates.has(selectedDate)) {
+    if (recordsByDate.has(selectedDate)) {
       Alert.alert('Da co du lieu', 'Ngay nay da co ban ghi cham cong.');
       return;
     }
@@ -162,9 +185,17 @@ export default function LogsScreen() {
             {daysInMonth.map((day) => {
               const dateStr = format(day, 'yyyy-MM-dd');
               const isToday = dateStr === format(today, 'yyyy-MM-dd');
-              const hasRecord = recordDates.has(dateStr);
+              const shiftType = recordsByDate.get(dateStr);
+              const hasRecord = !!shiftType;
               const isFuture = isAfter(startOfDay(day), today);
               const isSelected = selectedDate === dateStr;
+              const markerColor = shiftType
+                ? SHIFT_MARKER_COLORS[
+                    resolvedDark
+                      ? 'dark'
+                      : 'light'
+                  ][shiftType]
+                : theme.colors.tertiary;
 
               return (
                 <TouchableOpacity
@@ -193,7 +224,11 @@ export default function LogsScreen() {
                     <View
                       style={[
                         styles.dayDot,
-                        isToday && { backgroundColor: theme.colors.onPrimary },
+                        {
+                          backgroundColor: isToday
+                            ? theme.colors.onPrimary
+                            : markerColor,
+                        },
                       ]}
                     />
                   )}

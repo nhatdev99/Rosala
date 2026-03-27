@@ -39,6 +39,7 @@ const FIELD_LABELS: Record<string, { label: string; suffix: string }> = {
   overtimeMultiplier: { label: 'Hệ số giờ tăng ca', suffix: 'x' },
   extraMultiplier: { label: 'Hệ số giờ phụ', suffix: 'x' },
   customWorkDays: { label: 'Số ngày công cơ bản', suffix: 'ngày' },
+  allowance: { label: 'Phụ cấp ca', suffix: '₫/ca' },
 };
 
 function formatInitialForm(shift: any) {
@@ -55,6 +56,7 @@ function formatInitialForm(shift: any) {
     customWorkDays: String(shift.customWorkDays ?? 26),
     overtimeMultiplier: String(shift.overtimeMultiplier ?? 1.5),
     extraMultiplier: String(shift.extraMultiplier ?? 1),
+    allowance: String(shift.allowance ?? 0),
   };
 }
 
@@ -99,6 +101,7 @@ export default function SalaryConfigScreen({ navigation }: any) {
     customWorkDays: parseLocaleNumber(formValues.customWorkDays),
     overtimeMultiplier: parseLocaleNumber(formValues.overtimeMultiplier),
     extraMultiplier: parseLocaleNumber(formValues.extraMultiplier),
+    allowance: parseLocaleNumber(formValues.allowance),
   };
 
   const previewRates = useMemo(() => resolveShiftRates(parsed as any, new Date().toISOString().slice(0, 10)), [
@@ -140,10 +143,12 @@ export default function SalaryConfigScreen({ navigation }: any) {
   };
 
   const renderedFields = calcMode === 'manual' ? MANUAL_FIELDS : AUTO_FIELDS;
+  const showAllowanceField = activeShift === 'night' || activeShift === 'offNight';
 
   const baseAmount = parseLocaleNumber(formValues.baseHours) * previewRates.baseRate;
   const overtimeAmount = parseLocaleNumber(formValues.overtimeHours) * (calcMode === 'auto' ? previewRates.overtimeRate : parsed.overtimeRate);
   const extraAmount = parseLocaleNumber(formValues.extraHours) * (calcMode === 'auto' ? previewRates.extraRate : parsed.extraRate);
+  const allowanceAmount = showAllowanceField ? parsed.allowance : 0;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
@@ -243,6 +248,23 @@ export default function SalaryConfigScreen({ navigation }: any) {
           );
         })}
 
+        {showAllowanceField && (
+          <View style={styles.fieldCard}>
+            <Text style={styles.fieldLabel}>{FIELD_LABELS.allowance.label}</Text>
+            <View style={styles.fieldInputRow}>
+              <TextInput
+                style={styles.fieldInput}
+                keyboardType="numeric"
+                value={formValues.allowance}
+                onChangeText={(v) => handleChange('allowance', v)}
+                placeholder="0"
+                placeholderTextColor={theme.colors.outline}
+              />
+              <Text style={styles.fieldSuffix}>{FIELD_LABELS.allowance.suffix}</Text>
+            </View>
+          </View>
+        )}
+
         <View style={styles.previewCard}>
           <Text style={styles.previewTitle}>Xem trước lương 1 ca ({calcMode === 'auto' ? 'Tự động' : 'Thủ công'})</Text>
           <View style={styles.previewRow}>
@@ -257,10 +279,18 @@ export default function SalaryConfigScreen({ navigation }: any) {
             <Text style={styles.previewLabel}>Lương giờ phụ</Text>
             <Text style={styles.previewValue}>{extraAmount.toLocaleString('vi-VN')} ₫</Text>
           </View>
+          {showAllowanceField && (
+            <View style={styles.previewRow}>
+              <Text style={styles.previewLabel}>Phụ cấp ca</Text>
+              <Text style={styles.previewValue}>{allowanceAmount.toLocaleString('vi-VN')} ₫</Text>
+            </View>
+          )}
           <View style={styles.divider} />
           <View style={styles.previewRow}>
             <Text style={styles.previewLabelBold}>Tổng 1 ca</Text>
-            <Text style={styles.previewValueBold}>{(baseAmount + overtimeAmount + extraAmount).toLocaleString('vi-VN')} ₫</Text>
+            <Text style={styles.previewValueBold}>
+              {(baseAmount + overtimeAmount + extraAmount + allowanceAmount).toLocaleString('vi-VN')} ₫
+            </Text>
           </View>
           {calcMode === 'auto' && (
             <Text style={styles.hintText}>

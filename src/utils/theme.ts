@@ -154,6 +154,16 @@ export const pastelPalettes: Record<ThemePaletteName, PaletteBase> = {
     text_secondary: '#7A7A7A',
     border: '#E0E7FF',
   },
+  pastel_gray_black: {
+    primary: '#5B616E',
+    secondary: '#2E333C',
+    accent: '#747B8A',
+    background: '#171A20',
+    surface: '#1E232C',
+    text_primary: '#F3F5F8',
+    text_secondary: '#B1B7C4',
+    border: '#3D4452',
+  },
 };
 
 const sharedTokens = {

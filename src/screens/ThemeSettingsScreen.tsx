@@ -35,6 +35,7 @@ const paletteLabels: Record<ThemePaletteName, string> = {
   pastel_yellow_soft: 'Pastel Vàng Nhẹ',
   pastel_peach: 'Pastel Peach',
   pastel_mix_cute: 'Pastel Mix Cute',
+  pastel_gray_black: 'Xám Đen',
 };
 
 export default function ThemeSettingsScreen() {
@@ -78,7 +79,7 @@ export default function ThemeSettingsScreen() {
         })}
       </View>
 
-      <Text style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>Bảng màu pastel</Text>
+      <Text style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>Bảng màu</Text>
       <View style={[styles.paletteList, { backgroundColor: theme.colors.surfaceContainerLow }]}> 
         {(Object.keys(pastelPalettes) as ThemePaletteName[]).map((key, idx, arr) => {
           const p = pastelPalettes[key];
