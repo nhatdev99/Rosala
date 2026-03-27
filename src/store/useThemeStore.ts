@@ -10,7 +10,8 @@ export type ThemePaletteName =
   | 'pastel_purple_dream'
   | 'pastel_yellow_soft'
   | 'pastel_peach'
-  | 'pastel_mix_cute';
+  | 'pastel_mix_cute'
+  | 'pastel_gray_black';
 
 interface ThemeState {
   mode: ThemeMode;

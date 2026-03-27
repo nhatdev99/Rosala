@@ -120,6 +120,14 @@ export default function SalaryScreen() {
             label="Tổng giờ tăng ca" 
             value={`${monthlySalary.totalOvertimeHours} h`} 
           />
+          <View style={styles.divider} />
+          <StatRow
+            styles={styles}
+            icon="moon-outline"
+            iconColor={theme.colors.primary}
+            label="Tổng phụ cấp ca đêm"
+            value={`${monthlySalary.totalAllowanceSalary.toLocaleString('vi-VN')} ₫`}
+          />
         </View>
 
       </View>
@@ -338,4 +346,3 @@ const createStyles = (theme: any) => StyleSheet.create({
     marginVertical: 16,
   },
 });
-

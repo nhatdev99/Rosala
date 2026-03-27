@@ -58,6 +58,7 @@ const defaultConfig: SalaryConfig = {
     customWorkDays: 26,
     overtimeMultiplier: 1.5,
     extraMultiplier: 1,
+    allowance: 0,
   },
   night: {
     calcMode: 'manual',
@@ -72,6 +73,7 @@ const defaultConfig: SalaryConfig = {
     customWorkDays: 26,
     overtimeMultiplier: 1.5,
     extraMultiplier: 1,
+    allowance: 50000,
   },
   offDay: {
     calcMode: 'manual',
@@ -86,6 +88,7 @@ const defaultConfig: SalaryConfig = {
     customWorkDays: 26,
     overtimeMultiplier: 1.5,
     extraMultiplier: 1,
+    allowance: 0,
   },
   offNight: {
     calcMode: 'manual',
@@ -100,6 +103,7 @@ const defaultConfig: SalaryConfig = {
     customWorkDays: 26,
     overtimeMultiplier: 1.5,
     extraMultiplier: 1,
+    allowance: 100000,
   },
   taxRate: 0,
 };
