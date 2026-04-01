@@ -15,6 +15,8 @@ import SalaryConfigScreen from '../screens/SalaryConfigScreen';
 import ThemeSettingsScreen from '../screens/ThemeSettingsScreen';
 import PolicyScreen from '../screens/PolicyScreen';
 import SupportFeedbackScreen from '../screens/SupportFeedbackScreen';
+import BackupScreen from '../screens/BackupScreen';
+import StatisticsCompareScreen from '../screens/StatisticsCompareScreen';
 import PersonalInfoScreen from '../screens/PersonalInfoScreen';
 import FlashGuideScreen from '../screens/FlashGuideScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
@@ -95,6 +97,16 @@ const ProfileStackScreen = () => {
         name="SupportFeedback"
         component={SupportFeedbackScreen}
         options={{ headerShown: true, title: 'Ho tro va gop y' }}
+      />
+      <ProfileStack.Screen
+        name="Backup"
+        component={BackupScreen}
+        options={{ headerShown: true, title: 'Sao luu Firebase' }}
+      />
+      <ProfileStack.Screen
+        name="StatisticsCompare"
+        component={StatisticsCompareScreen}
+        options={{ headerShown: true, title: 'Thong ke va so sanh' }}
       />
     </ProfileStack.Navigator>
   );

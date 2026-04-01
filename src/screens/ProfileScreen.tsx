@@ -138,6 +138,14 @@ export default function ProfileScreen() {
               theme={theme}
               styles={styles}
             />
+            <View style={styles.divider} />
+            <MenuItem
+              icon="cloud-upload-outline"
+              title="Sao luu du lieu"
+              theme={theme}
+              styles={styles}
+              onPress={() => navigation.navigate('Backup')}
+            />
           </View>
         </View>
 
@@ -158,6 +166,19 @@ export default function ProfileScreen() {
               theme={theme}
               styles={styles}
               onPress={() => navigation.navigate('SupportFeedback')}
+            />
+          </View>
+        </View>
+
+        <View style={styles.menuSection}>
+          <Text style={styles.sectionTitle}>Phan tich</Text>
+          <View style={styles.menuCard}>
+            <MenuItem
+              icon="stats-chart-outline"
+              title="Thong ke va so sanh"
+              theme={theme}
+              styles={styles}
+              onPress={() => navigation.navigate('StatisticsCompare')}
             />
           </View>
         </View>
