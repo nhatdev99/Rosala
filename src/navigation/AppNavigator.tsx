@@ -34,6 +34,7 @@ import { useAutoFirebaseSync } from '../hooks/useAutoFirebaseSync';
 const Tab = createBottomTabNavigator();
 const ProfileStack = createNativeStackNavigator();
 const AttendanceStack = createNativeStackNavigator();
+const SalaryStack = createNativeStackNavigator();
 const RootStack = createNativeStackNavigator();
 const AuthStack = createNativeStackNavigator();
 
@@ -63,6 +64,26 @@ const AttendanceStackScreen = () => {
         options={{ headerShown: true, title: 'Thong bao' }}
       />
     </AttendanceStack.Navigator>
+  );
+};
+
+const SalaryStackScreen = () => {
+  const theme = useAppTheme();
+
+  return (
+    <SalaryStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: theme.colors.surface },
+      }}
+    >
+      <SalaryStack.Screen name="SalaryMain" component={SalaryScreen} />
+      <SalaryStack.Screen
+        name="StatisticsCompare"
+        component={StatisticsCompareScreen}
+        options={{ headerShown: true, title: 'Thong ke va so sanh' }}
+      />
+    </SalaryStack.Navigator>
   );
 };
 
@@ -171,7 +192,7 @@ const MainTabs = () => {
     >
       <Tab.Screen name="Attendance" component={AttendanceStackScreen} options={{ title: 'Diem danh' }} />
       <Tab.Screen name="Logs" component={LogsScreen} options={{ title: 'Lich su' }} />
-      <Tab.Screen name="Salary" component={SalaryScreen} options={{ title: 'Bang luong' }} />
+      <Tab.Screen name="Salary" component={SalaryStackScreen} options={{ title: 'Bang luong' }} />
       <Tab.Screen name="Profile" component={ProfileStackScreen} options={{ title: 'Ca nhan' }} />
     </Tab.Navigator>
   );
